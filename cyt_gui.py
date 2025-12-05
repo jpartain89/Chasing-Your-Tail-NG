@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced CYT GUI - BlackHat Arsenal Ready
-Maintains Fisher Price usability for small screens while looking professional
+Enhanced CYT GUI - Unified Touch-Friendly Interface
+Small screen optimized with setup wizard integration
 """
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -16,20 +16,95 @@ import threading
 from datetime import datetime
 
 # Set test mode for GUI before any imports
-import os
 os.environ['CYT_TEST_MODE'] = 'true'  # Enable test mode for GUI
 
+
 class CYTGui:
+    """Main CYT GUI Application with unified interface"""
+    
+    # Touch-friendly button dimensions
+    BUTTON_WIDTH = 14
+    BUTTON_HEIGHT = 2
+    BUTTON_FONT_SIZE = 10
+    
     def __init__(self):
         self.root = tk.Tk()
         
-        # Load config later when needed
+        # Load config
         self.config = None
         self.credential_manager = None
+        self._load_config()
         
-        self.setup_ui()
+        # Check if setup is needed
+        self.setup_complete = self._check_setup_status()
+        
+        # Setup UI
         self.running_processes = {}
-        self.update_status()
+        self.current_view = 'main'  # Track current view for navigation
+        
+        if not self.setup_complete:
+            self._run_setup_wizard()
+        else:
+            self.setup_ui()
+            self.update_status()
+    
+    def _load_config(self):
+        """Load configuration file"""
+        try:
+            with open('config.json', 'r') as f:
+                self.config = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.config = {
+                'paths': {
+                    'log_dir': 'logs',
+                    'kismet_logs': '/tmp/kismet*.kismet'
+                },
+                'timing': {
+                    'check_interval': 60
+                }
+            }
+    
+    def _check_setup_status(self) -> bool:
+        """Check if initial setup has been completed"""
+        return self.config.get('setup_complete', False)
+    
+    def _run_setup_wizard(self):
+        """Run the setup wizard"""
+        try:
+            from setup_wizard import GUISetupWizard, SetupConfig
+            config = SetupConfig()
+            wizard = GUISetupWizard(config, None)
+            
+            # Create wizard as main window
+            self.root.withdraw()  # Hide main window temporarily
+            
+            wizard_root = tk.Tk()
+            wizard_root.title("🔧 CYT Setup Wizard")
+            wizard_root.geometry("700x550")
+            wizard_root.configure(bg='#1a1a1a')
+            
+            wizard._create_wizard_content(wizard_root)
+            
+            def on_close():
+                if config.is_setup_complete():
+                    self.setup_complete = True
+                    self._load_config()
+                wizard_root.destroy()
+                self.root.deiconify()
+                self.setup_ui()
+                self.update_status()
+            
+            wizard_root.protocol("WM_DELETE_WINDOW", on_close)
+            wizard_root.mainloop()
+            
+        except ImportError:
+            # Fallback: show setup dialog
+            messagebox.showinfo(
+                "Setup Required",
+                "Please run 'python3 setup_wizard.py' to configure CYT before first use."
+            )
+            self.setup_ui()
+            self.update_status()
         
     def setup_ui(self):
         """Setup the enhanced UI"""
@@ -200,7 +275,23 @@ class CYTGui:
             bd=3,
             command=self.delete_ignore_lists
         )
-        self.delete_ignore_btn.pack(side=tk.LEFT)
+        self.delete_ignore_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Setup/Settings button
+        self.setup_btn = tk.Button(
+            top_row,
+            text="⚙️ Settings\n& Setup",
+            font=('Arial', 9, 'bold'),
+            width=12,
+            height=2,
+            fg='#ffffff',
+            bg='#17a2b8',
+            activebackground='#138496',
+            relief='raised',
+            bd=3,
+            command=self.open_settings
+        )
+        self.setup_btn.pack(side=tk.LEFT)
         
         # Bottom row buttons
         bottom_row = tk.Frame(controls_frame, bg='#2a2a2a')
@@ -696,6 +787,231 @@ class CYTGui:
             self.log_message(f"❌ Error running surveillance analysis: {e}")
         finally:
             self.surveillance_btn.config(state='normal', text='🗺️ Surveillance\nAnalysis')
+    
+    def open_settings(self):
+        """Open settings dialog"""
+        self.log_message("⚙️ Opening settings...")
+        
+        # Create settings dialog
+        settings_dialog = tk.Toplevel(self.root)
+        settings_dialog.title("⚙️ CYT Settings")
+        settings_dialog.geometry("600x500")
+        settings_dialog.configure(bg='#1a1a1a')
+        settings_dialog.transient(self.root)
+        settings_dialog.grab_set()
+        
+        # Main frame
+        main_frame = tk.Frame(settings_dialog, bg='#1a1a1a', padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title = tk.Label(
+            main_frame,
+            text="⚙️ CYT Settings",
+            font=('Arial', 16, 'bold'),
+            fg='#00ff41',
+            bg='#1a1a1a'
+        )
+        title.pack(pady=(0, 20))
+        
+        # Settings sections
+        settings_frame = tk.Frame(main_frame, bg='#2a2a2a', padx=15, pady=15)
+        settings_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Kismet Database Path
+        kismet_label = tk.Label(
+            settings_frame,
+            text="Kismet Database Path:",
+            font=('Arial', 11, 'bold'),
+            fg='#ffffff',
+            bg='#2a2a2a'
+        )
+        kismet_label.pack(anchor=tk.W, pady=(0, 5))
+        
+        self.kismet_path_entry = tk.Entry(
+            settings_frame,
+            font=('Courier', 11),
+            fg='#00ff41',
+            bg='#1a1a1a',
+            insertbackground='#00ff41',
+            width=50
+        )
+        current_path = self.config.get('paths', {}).get('kismet_logs', '/tmp/kismet*.kismet')
+        self.kismet_path_entry.insert(0, current_path)
+        self.kismet_path_entry.pack(fill=tk.X, pady=(0, 15))
+        
+        # Check Interval
+        interval_label = tk.Label(
+            settings_frame,
+            text="Check Interval (seconds):",
+            font=('Arial', 11, 'bold'),
+            fg='#ffffff',
+            bg='#2a2a2a'
+        )
+        interval_label.pack(anchor=tk.W, pady=(0, 5))
+        
+        self.interval_entry = tk.Entry(
+            settings_frame,
+            font=('Courier', 11),
+            fg='#00ff41',
+            bg='#1a1a1a',
+            insertbackground='#00ff41',
+            width=10
+        )
+        current_interval = self.config.get('timing', {}).get('check_interval', 60)
+        self.interval_entry.insert(0, str(current_interval))
+        self.interval_entry.pack(anchor=tk.W, pady=(0, 15))
+        
+        # Search Area
+        search_label = tk.Label(
+            settings_frame,
+            text="Geographic Search Area:",
+            font=('Arial', 11, 'bold'),
+            fg='#ffffff',
+            bg='#2a2a2a'
+        )
+        search_label.pack(anchor=tk.W, pady=(0, 5))
+        
+        search_info = tk.Label(
+            settings_frame,
+            text="(Used for WiGLE API queries)",
+            font=('Arial', 9),
+            fg='#888888',
+            bg='#2a2a2a'
+        )
+        search_info.pack(anchor=tk.W, pady=(0, 10))
+        
+        # Coordinate entries
+        coords_frame = tk.Frame(settings_frame, bg='#2a2a2a')
+        coords_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        search_config = self.config.get('search', {})
+        self.search_entries = {}
+        
+        for i, (label, key, default) in enumerate([
+            ("Lat Min:", 'lat_min', 31.3),
+            ("Lat Max:", 'lat_max', 37.0),
+            ("Lon Min:", 'lon_min', -114.8),
+            ("Lon Max:", 'lon_max', -109.0)
+        ]):
+            row = tk.Frame(coords_frame, bg='#2a2a2a')
+            row.pack(fill=tk.X, pady=2)
+            
+            tk.Label(
+                row,
+                text=label,
+                font=('Arial', 10),
+                fg='#cccccc',
+                bg='#2a2a2a',
+                width=10,
+                anchor=tk.W
+            ).pack(side=tk.LEFT)
+            
+            entry = tk.Entry(
+                row,
+                font=('Courier', 10),
+                fg='#00ff41',
+                bg='#1a1a1a',
+                width=12
+            )
+            entry.insert(0, str(search_config.get(key, default)))
+            entry.pack(side=tk.LEFT, padx=5)
+            self.search_entries[key] = entry
+        
+        # Action buttons
+        btn_frame = tk.Frame(main_frame, bg='#1a1a1a')
+        btn_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        # Run Setup Wizard button
+        wizard_btn = tk.Button(
+            btn_frame,
+            text="🔧 Run Setup Wizard",
+            font=('Arial', 10, 'bold'),
+            fg='#ffffff',
+            bg='#17a2b8',
+            activebackground='#138496',
+            width=18,
+            height=2,
+            command=lambda: self._launch_setup_wizard(settings_dialog)
+        )
+        wizard_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Save button
+        save_btn = tk.Button(
+            btn_frame,
+            text="💾 Save Settings",
+            font=('Arial', 10, 'bold'),
+            fg='#ffffff',
+            bg='#28a745',
+            activebackground='#1e7e34',
+            width=15,
+            height=2,
+            command=lambda: self._save_settings(settings_dialog)
+        )
+        save_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Cancel button
+        cancel_btn = tk.Button(
+            btn_frame,
+            text="❌ Cancel",
+            font=('Arial', 10, 'bold'),
+            fg='#ffffff',
+            bg='#6c757d',
+            activebackground='#545b62',
+            width=12,
+            height=2,
+            command=settings_dialog.destroy
+        )
+        cancel_btn.pack(side=tk.RIGHT)
+    
+    def _save_settings(self, dialog):
+        """Save settings from dialog"""
+        try:
+            # Update config
+            self.config['paths']['kismet_logs'] = self.kismet_path_entry.get()
+            
+            interval = int(self.interval_entry.get())
+            if interval >= 10:
+                self.config['timing']['check_interval'] = interval
+            
+            self.config['search'] = {
+                'lat_min': float(self.search_entries['lat_min'].get()),
+                'lat_max': float(self.search_entries['lat_max'].get()),
+                'lon_min': float(self.search_entries['lon_min'].get()),
+                'lon_max': float(self.search_entries['lon_max'].get())
+            }
+            
+            # Save to file
+            with open('config.json', 'w') as f:
+                json.dump(self.config, f, indent=2)
+            
+            self.log_message("✅ Settings saved successfully!")
+            dialog.destroy()
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid value: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save settings: {e}")
+    
+    def _launch_setup_wizard(self, parent_dialog):
+        """Launch the setup wizard from settings"""
+        parent_dialog.destroy()
+        
+        try:
+            from setup_wizard import GUISetupWizard, SetupConfig
+            config = SetupConfig()
+            wizard = GUISetupWizard(config, self.root)
+            wizard.run()
+            
+            # Reload config after wizard completes
+            self._load_config()
+            self.log_message("✅ Setup wizard completed - settings updated")
+            
+        except ImportError:
+            messagebox.showinfo(
+                "Setup Wizard",
+                "Please run 'python3 setup_wizard.py' from the command line."
+            )
             
     def quit_application(self):
         """Quit application with cleanup"""

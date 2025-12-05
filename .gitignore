@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CYT runtime files
+logs/
+reports/
+kml_files/
+surveillance_reports/
+analysis_logs/
+secure_credentials/
+ignore_lists/
+
+# Security logs
+cyt_security.log
+*.log
+
+# Backup files
+*.bak
+config_backup.json
+config_secure.json
+
+# Temporary files
+/tmp/
+*.tmp
