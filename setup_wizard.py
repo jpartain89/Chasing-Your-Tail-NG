@@ -259,8 +259,8 @@ class CLISetupWizard:
         creds_dir = os.path.join(base_dir, 'secure_credentials')
         try:
             os.chmod(creds_dir, 0o700)
-        except:
-            pass
+        except (OSError, PermissionError) as e:
+            print(f"  ⚠️ Could not set permissions on credentials directory: {e}")
         
         print("\n✅ All directories configured")
     
@@ -291,6 +291,8 @@ class CLISetupWizard:
         encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
         
         # Store using secure credentials manager
+        # Note: We set CYT_TEST_MODE to allow non-interactive credential storage during setup
+        old_test_mode = os.environ.get('CYT_TEST_MODE')
         try:
             from secure_credentials import SecureCredentialManager
             os.environ['CYT_TEST_MODE'] = 'true'  # Use test mode for setup
@@ -300,6 +302,12 @@ class CLISetupWizard:
         except Exception as e:
             print(f"\n⚠️ Could not store credentials securely: {e}")
             print("You may need to run migrate_credentials.py later.")
+        finally:
+            # Restore original test mode setting
+            if old_test_mode is None:
+                os.environ.pop('CYT_TEST_MODE', None)
+            else:
+                os.environ['CYT_TEST_MODE'] = old_test_mode
     
     def _setup_geographic(self):
         """Configure geographic search boundaries"""
@@ -764,8 +772,8 @@ if HAS_TK:
                         'lon_min': float(self.search_entries['lon_min'].get()),
                         'lon_max': float(self.search_entries['lon_max'].get())
                     }
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    print(f"Warning: Invalid search coordinates entered, keeping previous values: {e}")
 else:
     # Placeholder for when tkinter is not available
     GUISetupWizard = None

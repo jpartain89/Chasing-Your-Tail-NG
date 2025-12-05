@@ -128,14 +128,27 @@ install_kismet() {
         log_info "Kismet not found. Attempting to install..."
         
         if command -v apt-get &> /dev/null; then
-            # Add Kismet repository for Debian/Ubuntu
-            log_info "Adding Kismet repository..."
-            wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key 2>/dev/null | $SUDO apt-key add - 2>/dev/null || true
-            
-            # Try installing from repository first
+            # Try installing from default repository first
+            log_info "Attempting to install Kismet from system repository..."
             $SUDO apt-get install -y kismet 2>/dev/null || {
-                log_warn "Could not install Kismet from repository."
-                log_warn "Please install Kismet manually from https://www.kismetwireless.net/"
+                # If not available, try adding Kismet repository
+                log_info "Not in system repository, trying Kismet repository..."
+                
+                # Use modern method for GPG key (avoid deprecated apt-key)
+                $SUDO mkdir -p /etc/apt/keyrings
+                wget -qO - https://www.kismetwireless.net/repos/kismet-release.gpg.key 2>/dev/null | \
+                    $SUDO gpg --dearmor -o /etc/apt/keyrings/kismet.gpg 2>/dev/null || {
+                    log_warn "Could not add Kismet repository key."
+                    log_warn "Please install Kismet manually from https://www.kismetwireless.net/"
+                    return
+                }
+                
+                # Try installing again
+                $SUDO apt-get update 2>/dev/null
+                $SUDO apt-get install -y kismet 2>/dev/null || {
+                    log_warn "Could not install Kismet from repository."
+                    log_warn "Please install Kismet manually from https://www.kismetwireless.net/"
+                }
             }
         else
             log_warn "Please install Kismet manually from https://www.kismetwireless.net/"
