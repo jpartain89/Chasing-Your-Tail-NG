@@ -215,6 +215,38 @@ All settings are centralized in `config.json`:
 
 WiGLE API credentials are now securely encrypted in `secure_credentials/encrypted_credentials.json`.
 
+## Testing
+
+This project includes a comprehensive test suite with automated CI/CD via GitHub Actions.
+
+### Running Tests Locally
+
+```bash
+# Install test dependencies
+pip3 install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_setup_wizard.py -v
+```
+
+### Test Coverage
+
+The test suite includes:
+- **Unit tests** for setup wizard, input validation, and security modules
+- **Integration tests** for installation scripts and module imports
+- **Coverage reporting** to track code coverage
+- **Automated CI/CD** that runs on every pull request
+
+Tests run automatically on PRs against Python 3.8, 3.9, 3.10, 3.11, and 3.12.
+
+See `tests/README.md` for more details on the test suite.
+
 ## Security Features
 
 - **Parameterized SQL queries** prevent injection attacks

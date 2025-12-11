@@ -58,3 +58,13 @@ config_secure.json
 # Temporary files
 /tmp/
 *.tmp
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.pytest_cache/
+.tox/
+bandit-report.json
