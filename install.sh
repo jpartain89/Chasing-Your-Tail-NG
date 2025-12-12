@@ -143,6 +143,11 @@ install_kismet() {
                     return
                 }
                 
+                # Add Kismet repository to sources.list.d
+                DISTRO_CODENAME="$(. /etc/os-release && echo $VERSION_CODENAME)"
+                echo "deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release $DISTRO_CODENAME main" | \
+                    $SUDO tee /etc/apt/sources.list.d/kismet.list > /dev/null
+                
                 # Try installing again
                 $SUDO apt-get update 2>/dev/null
                 $SUDO apt-get install -y kismet 2>/dev/null || {

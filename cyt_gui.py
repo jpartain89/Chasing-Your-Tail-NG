@@ -73,29 +73,22 @@ class CYTGui:
         try:
             from setup_wizard import GUISetupWizard, SetupConfig
             config = SetupConfig()
-            wizard = GUISetupWizard(config, None)
+            wizard = GUISetupWizard(config, self.root)
             
-            # Create wizard as main window
-            self.root.withdraw()  # Hide main window temporarily
+            # Hide main window temporarily
+            self.root.withdraw()
             
-            wizard_root = tk.Tk()
-            wizard_root.title("🔧 CYT Setup Wizard")
-            wizard_root.geometry("700x550")
-            wizard_root.configure(bg='#1a1a1a')
-            
-            wizard._create_wizard_content(wizard_root)
-            
-            def on_close():
+            def on_wizard_complete():
                 if config.is_setup_complete():
                     self.setup_complete = True
                     self._load_config()
-                wizard_root.destroy()
                 self.root.deiconify()
                 self.setup_ui()
                 self.update_status()
             
-            wizard_root.protocol("WM_DELETE_WINDOW", on_close)
-            wizard_root.mainloop()
+            # Run wizard (it will create its own dialog/window)
+            wizard.run()
+            on_wizard_complete()
             
         except ImportError:
             # Fallback: show setup dialog
@@ -974,11 +967,27 @@ class CYTGui:
             if interval >= 10:
                 self.config['timing']['check_interval'] = interval
             
+            # Validate and save geographic coordinates
+            lat_min = float(self.search_entries['lat_min'].get())
+            lat_max = float(self.search_entries['lat_max'].get())
+            lon_min = float(self.search_entries['lon_min'].get())
+            lon_max = float(self.search_entries['lon_max'].get())
+            
+            # Validate coordinate ranges
+            if not (-90 <= lat_min <= 90 and -90 <= lat_max <= 90):
+                messagebox.showerror("Invalid Coordinates", 
+                                   "Latitude values must be between -90 and 90.")
+                return
+            if not (-180 <= lon_min <= 180 and -180 <= lon_max <= 180):
+                messagebox.showerror("Invalid Coordinates", 
+                                   "Longitude values must be between -180 and 180.")
+                return
+            
             self.config['search'] = {
-                'lat_min': float(self.search_entries['lat_min'].get()),
-                'lat_max': float(self.search_entries['lat_max'].get()),
-                'lon_min': float(self.search_entries['lon_min'].get()),
-                'lon_max': float(self.search_entries['lon_max'].get())
+                'lat_min': lat_min,
+                'lat_max': lat_max,
+                'lon_min': lon_min,
+                'lon_max': lon_max
             }
             
             # Save to file

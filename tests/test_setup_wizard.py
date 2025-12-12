@@ -4,8 +4,6 @@ Tests for setup_wizard.py
 import pytest
 import json
 import os
-import tempfile
-from pathlib import Path
 import sys
 
 # Add parent directory to path for imports

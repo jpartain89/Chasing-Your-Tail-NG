@@ -6,15 +6,14 @@ Handles all configuration questions and initial setup
 import json
 import os
 import sys
-import pathlib
 import getpass
 import glob
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 
 # Check if running in GUI mode
 try:
     import tkinter as tk
-    from tkinter import ttk, messagebox, filedialog
+    from tkinter import messagebox, filedialog
     HAS_TK = True
 except ImportError:
     HAS_TK = False
@@ -231,7 +230,7 @@ class CLISetupWizard:
                     custom_path = self.get_input("Enter Kismet database path pattern", current_path)
                     self.config.config['paths']['kismet_logs'] = custom_path
             except ValueError:
-                pass
+                print("  ⚠️ Invalid input. Using previous or default Kismet database path.")
         else:
             print("No Kismet databases found automatically.")
             path = self.get_input("Enter Kismet database path pattern", current_path)
@@ -282,8 +281,18 @@ class CLISetupWizard:
         if not api_name:
             return
         
+        # Validate API name length and characters
+        if len(api_name) > 100 or any(c in api_name for c in ['<', '>', '"', "'", '&', ';']):
+            print("\n⚠️ Invalid API name. Contains invalid characters or is too long.")
+            return
+        
         api_token = getpass.getpass("Enter WiGLE API token: ")
         if not api_token:
+            return
+        
+        # Validate API token length
+        if len(api_token) > 200:
+            print("\n⚠️ Invalid API token. Token is too long.")
             return
         
         # Create base64 encoded token
@@ -329,14 +338,20 @@ class CLISetupWizard:
                 lon_min = float(self.get_input("Minimum Longitude", str(current.get('lon_min', -114.8))))
                 lon_max = float(self.get_input("Maximum Longitude", str(current.get('lon_max', -109.0))))
                 
-                self.config.config['search'] = {
-                    'lat_min': lat_min,
-                    'lat_max': lat_max,
-                    'lon_min': lon_min,
-                    'lon_max': lon_max
-                }
+                # Validate coordinate ranges
+                if not (-90 <= lat_min <= 90 and -90 <= lat_max <= 90):
+                    print("⚠️ Latitude values must be between -90 and 90. Using defaults.")
+                elif not (-180 <= lon_min <= 180 and -180 <= lon_max <= 180):
+                    print("⚠️ Longitude values must be between -180 and 180. Using defaults.")
+                else:
+                    self.config.config['search'] = {
+                        'lat_min': lat_min,
+                        'lat_max': lat_max,
+                        'lon_min': lon_min,
+                        'lon_max': lon_max
+                    }
             except ValueError:
-                print("Invalid coordinates. Using defaults.")
+                print("⚠️ Invalid coordinates. Using defaults.")
         
         print(f"\n✅ Search area configured")
     
@@ -753,27 +768,44 @@ if HAS_TK:
                 api_token = self.wigle_token_entry.get().strip()
                 
                 if api_name and api_token:
-                    try:
-                        import base64
-                        from secure_credentials import SecureCredentialManager
-                        encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
-                        cred_manager = SecureCredentialManager()
-                        cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
-                    except Exception as e:
-                        messagebox.showwarning(
-                            "WiGLE Credential Storage Failed",
-                            f"Could not store WiGLE credentials securely:\n{e}\n\n"
-                            "You may need to re-enter them later."
-                        )
+                    # Validate API credentials
+                    if len(api_name) > 100 or any(c in api_name for c in ['<', '>', '"', "'", '&', ';']):
+                        print(f"Warning: Invalid WiGLE API name. Contains invalid characters or is too long.")
+                    elif len(api_token) > 200:
+                        print(f"Warning: Invalid WiGLE API token. Token is too long.")
+                    else:
+                        try:
+                            import base64
+                            from secure_credentials import SecureCredentialManager
+                            encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
+                            cred_manager = SecureCredentialManager()
+                            cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
+                        except Exception as e:
+                            messagebox.showwarning(
+                                "WiGLE Credential Storage Failed",
+                                f"Could not store WiGLE credentials securely:\n{e}\n\n"
+                                "You may need to re-enter them later."
+                            )
             # Save search boundaries
             if hasattr(self, 'search_entries'):
                 try:
-                    self.config.config['search'] = {
-                        'lat_min': float(self.search_entries['lat_min'].get()),
-                        'lat_max': float(self.search_entries['lat_max'].get()),
-                        'lon_min': float(self.search_entries['lon_min'].get()),
-                        'lon_max': float(self.search_entries['lon_max'].get())
-                    }
+                    lat_min = float(self.search_entries['lat_min'].get())
+                    lat_max = float(self.search_entries['lat_max'].get())
+                    lon_min = float(self.search_entries['lon_min'].get())
+                    lon_max = float(self.search_entries['lon_max'].get())
+                    
+                    # Validate coordinate ranges
+                    if not (-90 <= lat_min <= 90 and -90 <= lat_max <= 90):
+                        print(f"Warning: Latitude values must be between -90 and 90, keeping previous values")
+                    elif not (-180 <= lon_min <= 180 and -180 <= lon_max <= 180):
+                        print(f"Warning: Longitude values must be between -180 and 180, keeping previous values")
+                    else:
+                        self.config.config['search'] = {
+                            'lat_min': lat_min,
+                            'lat_max': lat_max,
+                            'lon_min': lon_min,
+                            'lon_max': lon_max
+                        }
                 except ValueError as e:
                     print(f"Warning: Invalid search coordinates entered, keeping previous values: {e}")
 else:
