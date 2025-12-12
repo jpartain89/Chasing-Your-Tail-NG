@@ -760,8 +760,11 @@ if HAS_TK:
                         cred_manager = SecureCredentialManager()
                         cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
                     except Exception as e:
-                        print(f"Warning: Could not store WiGLE credentials: {e}")
-            
+                        messagebox.showwarning(
+                            "WiGLE Credential Storage Failed",
+                            f"Could not store WiGLE credentials securely:\n{e}\n\n"
+                            "You may need to re-enter them later."
+                        )
             # Save search boundaries
             if hasattr(self, 'search_entries'):
                 try:
