@@ -756,7 +756,6 @@ if HAS_TK:
                     try:
                         import base64
                         from secure_credentials import SecureCredentialManager
-                        os.environ['CYT_TEST_MODE'] = 'true'
                         encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
                         cred_manager = SecureCredentialManager()
                         cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
