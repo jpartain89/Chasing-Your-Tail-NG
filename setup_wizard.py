@@ -839,9 +839,17 @@ def run_setup_wizard(gui: bool = None, parent=None) -> bool:
         return wizard.run()
 
 
-def needs_setup() -> bool:
-    """Check if setup is needed"""
-    config = SetupConfig()
+def needs_setup(config_path: str = "config.json") -> bool:
+    """
+    Check if setup is needed
+    
+    Args:
+        config_path: Path to config file (defaults to config.json)
+    
+    Returns:
+        True if setup is needed, False otherwise
+    """
+    config = SetupConfig(config_path)
     return not config.is_setup_complete()
 
 

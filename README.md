@@ -39,7 +39,14 @@ This project has been security-hardened to eliminate critical vulnerabilities:
 
 ### One-Line Install
 ```bash
+# Make the script executable (first time only)
+chmod +x install.sh
+
+# Run the installer
 ./install.sh
+
+# Alternative: run with bash directly (no chmod needed)
+bash install.sh
 ```
 
 This will install all system dependencies, Python packages, and set up the required directories.

@@ -175,8 +175,8 @@ class TestConfigValidation:
         config2 = {'paths': {}}
         assert InputValidator.validate_config_structure(config2) is False
     
-    def test_invalid_timing_values(self):
-        """Test detection of invalid timing values"""
+    def test_invalid_timing_check_interval(self):
+        """Test detection of invalid check_interval timing value"""
         config = {
             'paths': {
                 'log_dir': 'logs',
@@ -185,6 +185,22 @@ class TestConfigValidation:
             },
             'timing': {
                 'check_interval': -1  # Invalid: negative
+            }
+        }
+        
+        assert InputValidator.validate_config_structure(config) is False
+    
+    def test_invalid_timing_list_update_interval(self):
+        """Test detection of invalid list_update_interval timing value"""
+        config = {
+            'paths': {
+                'log_dir': 'logs',
+                'kismet_logs': '/tmp/*.kismet',
+                'ignore_lists': {}
+            },
+            'timing': {
+                'check_interval': 60,
+                'list_update_interval': 0  # Invalid: zero or negative
             }
         }
         

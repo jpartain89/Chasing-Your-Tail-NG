@@ -109,31 +109,25 @@ class TestSetupConfig:
 class TestNeedsSetup:
     """Test needs_setup function"""
     
-    def test_needs_setup_when_incomplete(self, tmp_path, monkeypatch):
+    def test_needs_setup_returns_true_when_setup_incomplete(self, tmp_path):
         """Test needs_setup returns True when setup is incomplete"""
         config_file = tmp_path / "config.json"
-        
-        # Change to temp directory
-        monkeypatch.chdir(tmp_path)
         
         # Create config without setup_complete flag
         with open(config_file, 'w') as f:
             json.dump({'paths': {}, 'timing': {}}, f)
         
-        assert needs_setup() is True
+        assert needs_setup(str(config_file)) is True
     
-    def test_needs_setup_when_complete(self, tmp_path, monkeypatch):
+    def test_needs_setup_returns_false_when_setup_complete(self, tmp_path):
         """Test needs_setup returns False when setup is complete"""
         config_file = tmp_path / "config.json"
-        
-        # Change to temp directory
-        monkeypatch.chdir(tmp_path)
         
         # Create config with setup_complete flag
         with open(config_file, 'w') as f:
             json.dump({'paths': {}, 'timing': {}, 'setup_complete': True}, f)
         
-        assert needs_setup() is False
+        assert needs_setup(str(config_file)) is False
 
 
 class TestCLISetupWizard:
