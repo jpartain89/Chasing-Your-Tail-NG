@@ -128,7 +128,8 @@ class TestStringSanitization:
         result = InputValidator.sanitize_string("SELECT * FROM users")
         # Sanitizer should remove SQL keywords, leaving sanitized string
         # The function removes keywords but may leave some characters
-        assert "select" not in result.lower() or len(result) < len("SELECT * FROM users")
+        assert "select" not in result.lower()
+        assert "from" not in result.lower()
     
     def test_truncate_long_string(self):
         """Test truncation of long strings"""
