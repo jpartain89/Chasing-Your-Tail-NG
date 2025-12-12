@@ -327,7 +327,7 @@ main() {
     read -p "Do you want to proceed with installation? [Y/n] " -n 1 -r
     echo ""
     
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
+    if [[ "${REPLY,,}" == "n" ]]; then
         log_info "Installation cancelled."
         exit 0
     fi
