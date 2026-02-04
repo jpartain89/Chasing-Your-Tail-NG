@@ -8,6 +8,7 @@ import os
 import sys
 import getpass
 import glob
+import base64
 from typing import Optional, Dict, Any
 
 # Check if running in GUI mode
@@ -296,11 +297,11 @@ class CLISetupWizard:
             return
         
         # Create base64 encoded token
-        import base64
         encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
         
         # Store using secure credentials manager
         # Note: We set CYT_TEST_MODE to allow non-interactive credential storage during setup
+        # The SecureCredentialManager would otherwise prompt for a master password
         old_test_mode = os.environ.get('CYT_TEST_MODE')
         try:
             from secure_credentials import SecureCredentialManager
@@ -783,9 +784,10 @@ if HAS_TK:
                         )
                     else:
                         # Store credentials with proper environment variable handling
+                        # Note: We set CYT_TEST_MODE to allow non-interactive credential storage
+                        # The SecureCredentialManager would otherwise prompt for a master password
                         old_test_mode = os.environ.get('CYT_TEST_MODE')
                         try:
-                            import base64
                             from secure_credentials import SecureCredentialManager
                             os.environ['CYT_TEST_MODE'] = 'true'  # Use test mode for setup
                             encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
