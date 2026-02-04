@@ -10,22 +10,22 @@ This project has been security-hardened to eliminate critical vulnerabilities:
 - **Input validation** and sanitization
 - **Secure ignore list loading** (no more `exec()` calls)
 
-**⚠️ REQUIRED: Run `python3 migrate_credentials.py` before first use to secure your API keys!**
-
 ## Features
 
 - **Real-time Wi-Fi monitoring** with Kismet integration
 - **Advanced surveillance detection** with persistence scoring
-- **🆕 Automatic GPS integration** - extracts coordinates from Bluetooth GPS via Kismet
+- **🆕 Unified Installation** - Single install script for all dependencies
+- **🆕 Setup Wizard** - Guided configuration on first run
+- **🆕 Touch-Friendly GUI** - Optimized for small screens and touch interfaces
+- **Automatic GPS integration** - extracts coordinates from Bluetooth GPS via Kismet
 - **GPS correlation** and location clustering (100m threshold)
-- **Spectacular KML visualization** for Google Earth with professional styling and interactive content
+- **Spectacular KML visualization** for Google Earth with professional styling
 - **Multi-format reporting** - Markdown, HTML (with pandoc), and KML outputs
 - **Time-window tracking** (5, 10, 15, 20 minute windows)
 - **WiGLE API integration** for SSID geolocation
 - **Multi-location tracking algorithms** for detecting following behavior
 - **Enhanced GUI interface** with surveillance analysis button
 - **Organized file structure** with dedicated output directories
-- **Comprehensive logging** and analysis tools
 
 ## Requirements
 
@@ -35,39 +35,52 @@ This project has been security-hardened to eliminate critical vulnerabilities:
 - Linux-based system
 - WiGLE API key (optional)
 
-## Installation & Setup
+## Quick Installation
 
-### 1. Install Dependencies
+### One-Line Install
+```bash
+# Make the script executable (first time only)
+chmod +x install.sh
+
+# Run the installer
+./install.sh
+
+# Alternative: run with bash directly (no chmod needed)
+bash install.sh
+```
+
+This will install all system dependencies, Python packages, and set up the required directories.
+
+### Manual Installation
+
+#### 1. Install System Dependencies
+```bash
+sudo apt-get install python3 python3-pip python3-tk wireless-tools iw pandoc gpsd
+```
+
+#### 2. Install Python Dependencies
 ```bash
 pip3 install -r requirements.txt
 ```
 
-### 2. Security Setup (REQUIRED FIRST TIME)
+#### 3. Run Setup Wizard
 ```bash
-# Migrate credentials from insecure config.json
-python3 migrate_credentials.py
-
-# Verify security hardening
-python3 chasing_your_tail.py
-# Should show: "🔒 SECURE MODE: All SQL injection vulnerabilities have been eliminated!"
+python3 setup_wizard.py
 ```
-
-### 3. Configure System
-Edit `config.json` with your paths and settings:
-- Kismet database path pattern
-- Log and ignore list directories
-- Time window configurations
-- Geographic search boundaries
+Or the setup wizard will run automatically on first GUI launch.
 
 ## Usage
 
-### GUI Interface
+### GUI Interface (Recommended)
 ```bash
-python3 cyt_gui.py  # Enhanced GUI with surveillance analysis
+python3 cyt_gui.py
 ```
 **GUI Features:**
-- 🗺️ **Surveillance Analysis** button - GPS-correlated persistence detection with spectacular KML visualization
-- 📈 **Analyze Logs** button - Historical probe request analysis
+- 🚀 **Start CYT** - Begin real-time Wi-Fi monitoring
+- 🗺️ **Surveillance Analysis** - GPS-correlated persistence detection with KML visualization
+- 📈 **Analyze Logs** - Historical probe request analysis
+- ⚙️ **Settings** - Configure paths, intervals, and run setup wizard
+- 📝 **Create/Delete Ignore Lists** - Manage MAC/SSID filtering
 - Real-time status monitoring and file generation notifications
 
 ### Command Line Monitoring
@@ -208,6 +221,38 @@ All settings are centralized in `config.json`:
 ```
 
 WiGLE API credentials are now securely encrypted in `secure_credentials/encrypted_credentials.json`.
+
+## Testing
+
+This project includes a comprehensive test suite with automated CI/CD via GitHub Actions.
+
+### Running Tests Locally
+
+```bash
+# Install test dependencies
+pip3 install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_setup_wizard.py -v
+```
+
+### Test Coverage
+
+The test suite includes:
+- **Unit tests** for setup wizard, input validation, and security modules
+- **Integration tests** for installation scripts and module imports
+- **Coverage reporting** to track code coverage
+- **Automated CI/CD** that runs on every pull request
+
+Tests run automatically on PRs against Python 3.8, 3.9, 3.10, 3.11, and 3.12.
+
+See `tests/README.md` for more details on the test suite.
 
 ## Security Features
 

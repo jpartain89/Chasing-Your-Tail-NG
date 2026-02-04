@@ -21,11 +21,10 @@ wheels/
 *.egg
 
 # Virtual environments
-.env
-.venv
-env/
 venv/
 ENV/
+env/
+.venv/
 
 # IDE
 .idea/
@@ -34,20 +33,38 @@ ENV/
 *.swo
 *~
 
-# Logs and temporary files
-*.log
-*.tmp
-*.bak
+# OS files
+.DS_Store
+Thumbs.db
 
-# Secure credentials (IMPORTANT - never commit!)
-secure_credentials/encrypted_credentials.json
-secure_credentials/.encryption_key
-
-# Kismet databases (large binary files)
-*.kismet
-
-# Generated reports (can be large)
-surveillance_reports/
-kml_files/
+# CYT runtime files
+logs/
 reports/
+kml_files/
+surveillance_reports/
 analysis_logs/
+secure_credentials/
+ignore_lists/
+
+# Security logs
+cyt_security.log
+*.log
+
+# Backup files
+*.bak
+config_backup.json
+config_secure.json
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.pytest_cache/
+.tox/
+bandit-report.json
