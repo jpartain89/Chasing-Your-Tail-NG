@@ -10,6 +10,7 @@ import getpass
 import glob
 import base64
 from typing import Optional, Dict, Any
+from contextlib import contextmanager
 
 # Check if running in GUI mode
 try:
@@ -18,6 +19,25 @@ try:
     HAS_TK = True
 except ImportError:
     HAS_TK = False
+
+
+@contextmanager
+def test_mode_for_setup():
+    """Context manager for temporarily enabling CYT_TEST_MODE during setup.
+    
+    The SecureCredentialManager would otherwise prompt for a master password,
+    which is not appropriate during the initial setup wizard flow.
+    This context manager ensures the environment variable is properly restored.
+    """
+    old_test_mode = os.environ.get('CYT_TEST_MODE')
+    try:
+        os.environ['CYT_TEST_MODE'] = 'true'
+        yield
+    finally:
+        if old_test_mode is None:
+            os.environ.pop('CYT_TEST_MODE', None)
+        else:
+            os.environ['CYT_TEST_MODE'] = old_test_mode
 
 
 class SetupConfig:
@@ -300,24 +320,15 @@ class CLISetupWizard:
         encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
         
         # Store using secure credentials manager
-        # Note: We set CYT_TEST_MODE to allow non-interactive credential storage during setup
-        # The SecureCredentialManager would otherwise prompt for a master password
-        old_test_mode = os.environ.get('CYT_TEST_MODE')
         try:
             from secure_credentials import SecureCredentialManager
-            os.environ['CYT_TEST_MODE'] = 'true'  # Use test mode for setup
-            cred_manager = SecureCredentialManager()
-            cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
+            with test_mode_for_setup():
+                cred_manager = SecureCredentialManager()
+                cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
             print("\n✅ WiGLE API credentials stored securely")
         except Exception as e:
             print(f"\n⚠️ Could not store credentials securely: {e}")
             print("You may need to run migrate_credentials.py later.")
-        finally:
-            # Restore original test mode setting
-            if old_test_mode is None:
-                os.environ.pop('CYT_TEST_MODE', None)
-            else:
-                os.environ['CYT_TEST_MODE'] = old_test_mode
     
     def _setup_geographic(self):
         """Configure geographic search boundaries"""
@@ -784,27 +795,18 @@ if HAS_TK:
                         )
                     else:
                         # Store credentials with proper environment variable handling
-                        # Note: We set CYT_TEST_MODE to allow non-interactive credential storage
-                        # The SecureCredentialManager would otherwise prompt for a master password
-                        old_test_mode = os.environ.get('CYT_TEST_MODE')
                         try:
                             from secure_credentials import SecureCredentialManager
-                            os.environ['CYT_TEST_MODE'] = 'true'  # Use test mode for setup
-                            encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
-                            cred_manager = SecureCredentialManager()
-                            cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
+                            with test_mode_for_setup():
+                                encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
+                                cred_manager = SecureCredentialManager()
+                                cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
                         except Exception as e:
                             messagebox.showwarning(
                                 "WiGLE Credential Storage Failed",
                                 f"Could not store WiGLE credentials securely:\n{e}\n\n"
                                 "You may need to re-enter them later."
                             )
-                        finally:
-                            # Restore original test mode setting
-                            if old_test_mode is None:
-                                os.environ.pop('CYT_TEST_MODE', None)
-                            else:
-                                os.environ['CYT_TEST_MODE'] = old_test_mode
             # Save search boundaries
             if hasattr(self, 'search_entries'):
                 try:
