@@ -770,13 +770,24 @@ if HAS_TK:
                 if api_name and api_token:
                     # Validate API credentials
                     if len(api_name) > 100 or any(c in api_name for c in ['<', '>', '"', "'", '&', ';']):
-                        print(f"Warning: Invalid WiGLE API name. Contains invalid characters or is too long.")
+                        messagebox.showwarning(
+                            "Invalid API Name",
+                            "WiGLE API name contains invalid characters or is too long.\n"
+                            "Please use a shorter name without special characters."
+                        )
                     elif len(api_token) > 200:
-                        print(f"Warning: Invalid WiGLE API token. Token is too long.")
+                        messagebox.showwarning(
+                            "Invalid API Token",
+                            "WiGLE API token is too long.\n"
+                            "Please check your token and try again."
+                        )
                     else:
+                        # Store credentials with proper environment variable handling
+                        old_test_mode = os.environ.get('CYT_TEST_MODE')
                         try:
                             import base64
                             from secure_credentials import SecureCredentialManager
+                            os.environ['CYT_TEST_MODE'] = 'true'  # Use test mode for setup
                             encoded_token = base64.b64encode(f"{api_name}:{api_token}".encode()).decode()
                             cred_manager = SecureCredentialManager()
                             cred_manager.store_credential('wigle', 'encoded_token', encoded_token)
@@ -786,6 +797,12 @@ if HAS_TK:
                                 f"Could not store WiGLE credentials securely:\n{e}\n\n"
                                 "You may need to re-enter them later."
                             )
+                        finally:
+                            # Restore original test mode setting
+                            if old_test_mode is None:
+                                os.environ.pop('CYT_TEST_MODE', None)
+                            else:
+                                os.environ['CYT_TEST_MODE'] = old_test_mode
             # Save search boundaries
             if hasattr(self, 'search_entries'):
                 try:
@@ -796,9 +813,17 @@ if HAS_TK:
                     
                     # Validate coordinate ranges
                     if not (-90 <= lat_min <= 90 and -90 <= lat_max <= 90):
-                        print(f"Warning: Latitude values must be between -90 and 90, keeping previous values")
+                        messagebox.showwarning(
+                            "Invalid Coordinates",
+                            "Latitude values must be between -90 and 90.\n"
+                            "Keeping previous values."
+                        )
                     elif not (-180 <= lon_min <= 180 and -180 <= lon_max <= 180):
-                        print(f"Warning: Longitude values must be between -180 and 180, keeping previous values")
+                        messagebox.showwarning(
+                            "Invalid Coordinates",
+                            "Longitude values must be between -180 and 180.\n"
+                            "Keeping previous values."
+                        )
                     else:
                         self.config.config['search'] = {
                             'lat_min': lat_min,
@@ -807,7 +832,12 @@ if HAS_TK:
                             'lon_max': lon_max
                         }
                 except ValueError as e:
-                    print(f"Warning: Invalid search coordinates entered, keeping previous values: {e}")
+                    messagebox.showwarning(
+                        "Invalid Input",
+                        f"Invalid search coordinates entered.\n"
+                        f"Error: {e}\n\n"
+                        "Keeping previous values."
+                    )
 else:
     # Placeholder for when tkinter is not available
     GUISetupWizard = None
