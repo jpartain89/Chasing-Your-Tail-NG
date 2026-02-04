@@ -145,6 +145,9 @@ install_kismet() {
                 
                 # Add Kismet repository to sources.list.d
                 DISTRO_CODENAME="$(. /etc/os-release && echo $VERSION_CODENAME)"
+                echo "deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release $DISTRO_CODENAME main" | $SUDO tee /etc/apt/sources.list.d/kismet.list > /dev/null
+                # Add Kismet repository to sources.list.d
+                DISTRO_CODENAME="$(. /etc/os-release && echo $VERSION_CODENAME)"
                 echo "deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release $DISTRO_CODENAME main" | \
                     $SUDO tee /etc/apt/sources.list.d/kismet.list > /dev/null
                 
