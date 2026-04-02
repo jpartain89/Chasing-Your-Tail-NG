@@ -47,6 +47,10 @@ class SetupConfig:
         "paths": {
             "base_dir": ".",
             "log_dir": "logs",
+            "reports_dir": "reports",
+            "kml_dir": "kml_files",
+            "surveillance_reports_dir": "surveillance_reports",
+            "analysis_logs_dir": "analysis_logs",
             "kismet_logs": "/home/*/kismet_logs/*.kismet",
             "ignore_lists": {
                 "mac": "mac_list.json",

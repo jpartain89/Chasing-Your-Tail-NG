@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import subprocess
 import os
+import sys
 import pathlib
 import sqlite3
 import glob
@@ -14,6 +15,10 @@ import json
 import time
 import threading
 from datetime import datetime
+
+from cyt_core_runtime import BackgroundMonitoringRunner
+from probe_analyzer import run_probe_analysis
+from surveillance_analyzer import run_surveillance_analysis
 
 # Set test mode for GUI before any imports
 os.environ['CYT_TEST_MODE'] = 'true'  # Enable test mode for GUI
@@ -594,37 +599,28 @@ class CYTGui:
     def run_cyt_threaded(self):
         """Run CYT in background"""
         if 'cyt' in self.running_processes:
-            self.log_message("⚠️ CYT is already running!")
+            self.log_message("🛑 Stopping Chasing Your Tail...")
+            try:
+                self.running_processes['cyt'].terminate()
+            except Exception as e:
+                self.log_message(f"⚠️ Failed to stop CYT cleanly: {e}")
             return
             
         self.log_message("🚀 Starting Chasing Your Tail...")
-        self.run_cyt_btn.config(state='disabled', text='🔄 RUNNING...', bg='#ffaa00')
+        self.run_cyt_btn.config(state='normal', text='🛑 STOP\nCHASING YOUR TAIL', bg='#dc3545')
         threading.Thread(target=self._run_cyt_background, daemon=True).start()
         
     def _run_cyt_background(self):
         """Background CYT execution"""
         try:
-            # Set test mode for non-interactive credential access
-            env = os.environ.copy()
-            env['CYT_TEST_MODE'] = 'true'
-            
-            process = subprocess.Popen(
-                ['python3', './chasing_your_tail.py'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
-                env=env
+            runner = BackgroundMonitoringRunner(
+                config_path='config.json',
+                on_output=lambda message: self.log_message(f"CYT: {message}"),
             )
-            
-            self.running_processes['cyt'] = process
-            self.log_message("✅ CYT process started successfully")
-            
-            # Read output in real-time
-            for line in process.stdout:
-                if line.strip():
-                    self.log_message(f"CYT: {line.strip()}")
+
+            self.running_processes['cyt'] = runner
+            self.log_message("✅ CYT monitoring started successfully")
+            runner.run()
                     
         except Exception as e:
             self.log_message(f"❌ Error running CYT: {e}")
@@ -642,18 +638,9 @@ class CYTGui:
     def _analyze_logs_background(self):
         """Background log analysis"""
         try:
-            env = os.environ.copy()
-            env['CYT_TEST_MODE'] = 'true'
-            
             self.log_message("🔄 Running probe analyzer (this may take several minutes for large datasets)...")
-            
-            result = subprocess.run(
-                ['python3', './probe_analyzer.py', '--local'],
-                capture_output=True,
-                text=True,
-                timeout=300,  # Increased to 5 minutes
-                env=env
-            )
+
+            return_code, output_text = run_probe_analysis(use_wigle=False, days_back=14, all_logs=False)
             
             # Save full output to timestamped report file
             from datetime import datetime
@@ -671,16 +658,10 @@ class CYTGui:
                 f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write("=" * 50 + "\n\n")
                 
-                if result.stdout:
+                if output_text:
                     f.write("ANALYSIS OUTPUT:\n")
                     f.write("-" * 30 + "\n")
-                    f.write(result.stdout)
-                    f.write("\n\n")
-                
-                if result.stderr and result.stderr.strip():
-                    f.write("WARNINGS/ERRORS:\n")
-                    f.write("-" * 30 + "\n")
-                    f.write(result.stderr)
+                    f.write(output_text)
                     f.write("\n\n")
                 
                 f.write("End of Report\n")
@@ -688,8 +669,8 @@ class CYTGui:
             self.log_message(f"📄 Full analysis saved to: {report_file}")
             
             # Show summary in GUI
-            if result.stdout:
-                lines = result.stdout.split('\n')
+            if output_text:
+                lines = output_text.split('\n')
                 summary_lines = []
                 
                 # Extract key findings for GUI display
@@ -711,14 +692,11 @@ class CYTGui:
                         if line.strip():
                             self.log_message(f"Analysis: {line}")
                     
-            if result.stderr and result.stderr.strip():
-                self.log_message(f"⚠️ Analysis warnings saved to report file")
+            if return_code != 0:
+                self.log_message("⚠️ Analysis completed with errors - see report file")
                     
             self.log_message("✅ Log analysis complete - see report file for full details")
-            
-        except subprocess.TimeoutExpired:
-            self.log_message("⚠️ Analysis timed out after 5 minutes (very large dataset)")
-            self.log_message("💡 Try running 'python3 probe_analyzer.py --local' manually for large datasets")
+
         except Exception as e:
             self.log_message(f"❌ Error analyzing logs: {e}")
         finally:
@@ -733,20 +711,11 @@ class CYTGui:
     def _surveillance_analysis_background(self):
         """Background surveillance analysis"""
         try:
-            env = os.environ.copy()
-            env['CYT_TEST_MODE'] = 'true'
-            
             self.log_message("🔄 Running surveillance analyzer (generating KML for Google Earth)...")
+
+            return_code, output_text = run_surveillance_analysis()
             
-            result = subprocess.run(
-                ['python3', './surveillance_analyzer.py'],
-                capture_output=True,
-                text=True,
-                timeout=300,
-                env=env
-            )
-            
-            if result.returncode == 0:
+            if return_code == 0:
                 # Look for generated files
                 import glob
                 kml_files = glob.glob("kml_files/surveillance_analysis_*.kml")
@@ -764,18 +733,16 @@ class CYTGui:
                 self.log_message("✅ Surveillance analysis complete!")
                 
                 # Show some output
-                if result.stdout:
-                    lines = result.stdout.split('\n')[:10]  # Show first 10 lines
+                if output_text:
+                    lines = output_text.split('\n')[:10]  # Show first 10 lines
                     for line in lines:
                         if line.strip():
                             self.log_message(f"📊 {line.strip()}")
             else:
                 self.log_message(f"❌ Surveillance analysis failed")
-                if result.stderr:
-                    self.log_message(f"Error: {result.stderr}")
-                    
-        except subprocess.TimeoutExpired:
-            self.log_message("⚠️ Surveillance analysis timed out")
+                if output_text:
+                    self.log_message(f"Error: {output_text.strip().splitlines()[-1]}")
+
         except Exception as e:
             self.log_message(f"❌ Error running surveillance analysis: {e}")
         finally:

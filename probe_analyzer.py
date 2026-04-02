@@ -8,6 +8,8 @@ from datetime import datetime
 import requests
 import sqlite3
 import argparse
+import io
+from contextlib import redirect_stdout
 
 # Load config with secure credentials
 from secure_credentials import secure_config_loader
@@ -166,19 +168,6 @@ def main():
        - Set your search area in config.json under search
     """
     
-    if len(glob.glob(str(pathlib.Path(config['paths']['log_dir']) / 'cyt_log_*'))) == 0:
-        print("\nError: No log files found!")
-        print(f"Please check the logs directory: {config['paths']['log_dir']}")
-        print("Run Chasing Your Tail first to generate some logs.")
-        return
-
-    # Check WiGLE configuration
-    if not config.get('api_keys', {}).get('wigle'):
-        print("\nNote: WiGLE API key not configured.")
-        print("To enable WiGLE lookups:")
-        print("1. Get an API key from wigle.net")
-        print("2. Add it to config.json under api_keys->wigle")
-    
     parser = argparse.ArgumentParser(description='Analyze probe requests and query WiGLE')
     parser.add_argument('--wigle', action='store_true', 
                       help='Enable WiGLE API queries (disabled by default to protect API keys)')
@@ -190,65 +179,90 @@ def main():
                       help='Analyze all log files (equivalent to --days 0)')
     args = parser.parse_args()
 
-    # Handle days filtering
-    days_back = 0 if args.all_logs else args.days
+    # Keep --local for backwards compatibility even though --wigle controls API usage.
+    use_wigle = args.wigle or args.local
+    return_code, output = run_probe_analysis(
+        use_wigle=use_wigle,
+        days_back=args.days,
+        all_logs=args.all_logs,
+    )
+    print(output, end="")
+    return return_code
 
-    print(f"\nAnalyzing probe requests from CYT logs...")
-    if days_back > 0:
-        print(f"📅 Filtering to logs from past {days_back} days")
-    else:
-        print("📁 Analyzing ALL log files")
-        
-    # Default to local_only=True unless --wigle is specified
-    use_wigle = args.wigle or args.local  # Keep --local for backwards compatibility
-    analyzer = ProbeAnalyzer(local_only=not use_wigle, days_back=days_back)
-    
-    if use_wigle:
-        print("🌐 WiGLE API queries ENABLED - this will consume API credits!")
-    else:
-        print("🔒 Local analysis only (use --wigle to enable API queries)")
-    analyzer.parse_all_logs()
-    results = analyzer.analyze_probes()
-    
-    if not results:
-        print("\nNo probe requests found in logs!")
-        print("Make sure Chasing Your Tail is running and detecting probes.")
-        return
-    
-    # Print analysis results
-    print(f"\nFound {len(results)} unique SSIDs in probe requests:")
-    print("-" * 50)
-    
-    # Sort results by count (most frequent first)
-    results.sort(key=lambda x: x['count'], reverse=True)
-    
-    for result in results:
-        print(f"\nSSID: {result['ssid']}")
-        print(f"Times seen: {result['count']}")
-        print(f"First seen: {result['first_seen']}")
-        print(f"Last seen: {result['last_seen']}")
-        
-        # Calculate time span
-        first = datetime.strptime(result['first_seen'], '%m-%d-%y %H:%M:%S')
-        last = datetime.strptime(result['last_seen'], '%m-%d-%y %H:%M:%S')
-        duration = last - first
-        if duration.total_seconds() > 0:
-            print(f"Time span: {duration}")
-            print(f"Average frequency: {result['count'] / duration.total_seconds():.2f} probes/second")
-        
-        if result.get('wigle_data'):
-            if 'error' in result['wigle_data']:
-                if result['wigle_data']['error'] != "WiGLE API key not configured":
-                    print(f"WiGLE Error: {result['wigle_data']['error']}")
-            else:
-                print("\nWiGLE Data:")
-                locations = result['wigle_data'].get('results', [])
-                print(f"Known locations: {len(locations)}")
-                if locations:
-                    print("Recent sightings:")
-                    for loc in locations[:3]:  # Show top 3 most recent
-                        print(f"- Lat: {loc.get('trilat')}, Lon: {loc.get('trilong')}")
-                        print(f"  Last seen: {loc.get('lastupdt')}")
+
+def run_probe_analysis(use_wigle: bool = False, days_back: int = 14, all_logs: bool = False):
+    """Run probe analysis programmatically and return (code, captured_output)."""
+    output_buffer = io.StringIO()
+
+    with redirect_stdout(output_buffer):
+        if len(glob.glob(str(pathlib.Path(config['paths']['log_dir']) / 'cyt_log_*'))) == 0:
+            print("\nError: No log files found!")
+            print(f"Please check the logs directory: {config['paths']['log_dir']}")
+            print("Run Chasing Your Tail first to generate some logs.")
+            return 1, output_buffer.getvalue()
+
+        if not config.get('api_keys', {}).get('wigle'):
+            print("\nNote: WiGLE API key not configured.")
+            print("To enable WiGLE lookups:")
+            print("1. Get an API key from wigle.net")
+            print("2. Add it to config.json under api_keys->wigle")
+
+        days_value = 0 if all_logs else days_back
+
+        print("\nAnalyzing probe requests from CYT logs...")
+        if days_value > 0:
+            print(f"📅 Filtering to logs from past {days_value} days")
+        else:
+            print("📁 Analyzing ALL log files")
+
+        analyzer = ProbeAnalyzer(local_only=not use_wigle, days_back=days_value)
+
+        if use_wigle:
+            print("🌐 WiGLE API queries ENABLED - this will consume API credits!")
+        else:
+            print("🔒 Local analysis only (use --wigle to enable API queries)")
+
+        analyzer.parse_all_logs()
+        results = analyzer.analyze_probes()
+
+        if not results:
+            print("\nNo probe requests found in logs!")
+            print("Make sure Chasing Your Tail is running and detecting probes.")
+            return 0, output_buffer.getvalue()
+
+        print(f"\nFound {len(results)} unique SSIDs in probe requests:")
+        print("-" * 50)
+
+        results.sort(key=lambda x: x['count'], reverse=True)
+
+        for result in results:
+            print(f"\nSSID: {result['ssid']}")
+            print(f"Times seen: {result['count']}")
+            print(f"First seen: {result['first_seen']}")
+            print(f"Last seen: {result['last_seen']}")
+
+            first = datetime.strptime(result['first_seen'], '%m-%d-%y %H:%M:%S')
+            last = datetime.strptime(result['last_seen'], '%m-%d-%y %H:%M:%S')
+            duration = last - first
+            if duration.total_seconds() > 0:
+                print(f"Time span: {duration}")
+                print(f"Average frequency: {result['count'] / duration.total_seconds():.2f} probes/second")
+
+            if result.get('wigle_data'):
+                if 'error' in result['wigle_data']:
+                    if result['wigle_data']['error'] != "WiGLE API key not configured":
+                        print(f"WiGLE Error: {result['wigle_data']['error']}")
+                else:
+                    print("\nWiGLE Data:")
+                    locations = result['wigle_data'].get('results', [])
+                    print(f"Known locations: {len(locations)}")
+                    if locations:
+                        print("Recent sightings:")
+                        for loc in locations[:3]:
+                            print(f"- Lat: {loc.get('trilat')}, Lon: {loc.get('trilong')}")
+                            print(f"  Last seen: {loc.get('lastupdt')}")
+
+    return 0, output_buffer.getvalue()
 
 if __name__ == "__main__":
-    main() 
+    raise SystemExit(main())

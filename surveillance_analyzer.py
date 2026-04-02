@@ -5,12 +5,14 @@ Combines GPS tracking, device detection, and KML export for stalking/surveillanc
 """
 import argparse
 import glob
+import io
 import json
 import logging
 import os
 import time
 from datetime import datetime
 from pathlib import Path
+from contextlib import redirect_stdout
 
 from surveillance_detector import SurveillanceDetector, load_appearances_from_kismet
 from gps_tracker import GPSTracker, KMLExporter, simulate_gps_data
@@ -33,7 +35,6 @@ class SurveillanceAnalyzer:
     
     def __init__(self, config_path: str = 'config.json'):
         # Load secure configuration
-        os.environ['CYT_TEST_MODE'] = 'true'  # For non-interactive mode
         self.config, self.credential_manager = secure_config_loader(config_path)
         
         # Initialize components
@@ -203,8 +204,10 @@ class SurveillanceAnalyzer:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Generate surveillance report
-        report_file = f"surveillance_reports/surveillance_report_{timestamp}.md"
-        html_file = f"surveillance_reports/surveillance_report_{timestamp}.html"
+        surv_reports_dir = self.config.get("paths", {}).get("surveillance_reports_dir", "surveillance_reports")
+        kml_dir = self.config.get("paths", {}).get("kml_dir", "kml_files")
+        report_file = f"{surv_reports_dir}/surveillance_report_{timestamp}.md"
+        html_file = f"{surv_reports_dir}/surveillance_report_{timestamp}.html"
         print(f"\\n📝 Generating surveillance reports:")
         print(f"   📄 Markdown: {report_file}")
         print(f"   🌐 HTML: {html_file}")
@@ -213,7 +216,7 @@ class SurveillanceAnalyzer:
         # Generate KML file if GPS data available
         kml_file = None
         if gps_data:
-            kml_file = f"kml_files/surveillance_analysis_{timestamp}.kml"
+            kml_file = f"{kml_dir}/surveillance_analysis_{timestamp}.kml"
             print(f"🗺️ Generating KML visualization: {kml_file}")
             self.kml_exporter.generate_kml(self.gps_tracker, suspicious_devices, kml_file)
             print(f"   Open in Google Earth to visualize device tracking patterns")
@@ -410,49 +413,70 @@ def main():
                        help='Minimum threat score for reporting (default: 0.5)')
     
     args = parser.parse_args()
-    
-    try:
-        analyzer = SurveillanceAnalyzer()
-        
-        if args.demo:
-            results = analyzer.generate_demo_analysis()
-        else:
-            # Load GPS data if provided
-            gps_data = None
-            if args.gps_file:
-                with open(args.gps_file, 'r') as f:
-                    gps_data = json.load(f)
-            
-            results = analyzer.analyze_kismet_data(
-                kismet_db_path=args.kismet_db,
-                gps_data=gps_data
-            )
-        
-        # Stalking-specific analysis
-        if args.stalking_only:
-            stalking_devices = analyzer.analyze_for_stalking(args.min_threat)
-            if stalking_devices:
-                print(f"\\n🚨 STALKING ALERT: {len(stalking_devices)} devices with stalking patterns!")
-                for device in stalking_devices:
-                    print(f"   ⚠️ {device.mac} (Stalking Score: {device.stalking_score:.2f})")
-                    for reason in device.stalking_reasons:
-                        print(f"      • {reason}")
+
+    return_code, output = run_surveillance_analysis(
+        demo=args.demo,
+        kismet_db=args.kismet_db,
+        gps_file=args.gps_file,
+        stalking_only=args.stalking_only,
+        output_json=args.output_json,
+        min_threat=args.min_threat,
+    )
+    print(output, end="")
+    return return_code
+
+
+def run_surveillance_analysis(
+    demo: bool = False,
+    kismet_db: str = None,
+    gps_file: str = None,
+    stalking_only: bool = False,
+    output_json: str = None,
+    min_threat: float = 0.5,
+):
+    """Run surveillance analysis programmatically and return (code, captured_output)."""
+    output_buffer = io.StringIO()
+
+    with redirect_stdout(output_buffer):
+        try:
+            analyzer = SurveillanceAnalyzer()
+
+            if demo:
+                results = analyzer.generate_demo_analysis()
             else:
-                print("\\n✅ No stalking patterns detected")
-        
-        # Export JSON if requested
-        if args.output_json:
-            analyzer.export_results_json(results, args.output_json)
-        
-        print("\\n🔒 Analysis complete! Stay safe out there.")
-        
-    except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
-    
-    return 0
+                gps_data = None
+                if gps_file:
+                    with open(gps_file, 'r') as f:
+                        gps_data = json.load(f)
+
+                results = analyzer.analyze_kismet_data(
+                    kismet_db_path=kismet_db,
+                    gps_data=gps_data,
+                )
+
+            if stalking_only:
+                stalking_devices = analyzer.analyze_for_stalking(min_threat)
+                if stalking_devices:
+                    print(f"\n🚨 STALKING ALERT: {len(stalking_devices)} devices with stalking patterns!")
+                    for device in stalking_devices:
+                        print(f"   ⚠️ {device.mac} (Stalking Score: {device.stalking_score:.2f})")
+                        for reason in device.stalking_reasons:
+                            print(f"      • {reason}")
+                else:
+                    print("\n✅ No stalking patterns detected")
+
+            if output_json:
+                analyzer.export_results_json(results, output_json)
+
+            print("\n🔒 Analysis complete! Stay safe out there.")
+        except Exception as e:
+            logger.error(f"Analysis failed: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return 1, output_buffer.getvalue()
+
+    return 0, output_buffer.getvalue()
 
 if __name__ == '__main__':
     exit(main())
