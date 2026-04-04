@@ -20,9 +20,6 @@ from cyt_core_runtime import BackgroundMonitoringRunner
 from probe_analyzer import run_probe_analysis
 from surveillance_analyzer import run_surveillance_analysis
 
-# Set test mode for GUI before any imports
-os.environ['CYT_TEST_MODE'] = 'true'  # Enable test mode for GUI
-
 
 class CYTGui:
     """Main CYT GUI Application with unified interface"""

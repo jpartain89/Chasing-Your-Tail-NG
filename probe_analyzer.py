@@ -172,15 +172,18 @@ def main():
     parser.add_argument('--wigle', action='store_true', 
                       help='Enable WiGLE API queries (disabled by default to protect API keys)')
     parser.add_argument('--local', action='store_true', 
-                      help='[DEPRECATED] Use --wigle to enable API calls')
+                      help='[DEPRECATED] Ignored. Use --wigle to enable API calls; omit for local-only analysis.')
     parser.add_argument('--days', type=int, default=14,
                       help='Number of days back to analyze (default: 14, use 0 for all logs)')
     parser.add_argument('--all-logs', action='store_true',
                       help='Analyze all log files (equivalent to --days 0)')
     args = parser.parse_args()
 
-    # Keep --local for backwards compatibility even though --wigle controls API usage.
-    use_wigle = args.wigle or args.local
+    if args.local and not args.wigle:
+        print("Note: --local is deprecated and has no effect. Omitting --wigle already runs local-only analysis.")
+
+    # Only --wigle controls API usage; --local is a no-op kept for backwards compatibility.
+    use_wigle = args.wigle
     return_code, output = run_probe_analysis(
         use_wigle=use_wigle,
         days_back=args.days,
@@ -201,11 +204,11 @@ def run_probe_analysis(use_wigle: bool = False, days_back: int = 14, all_logs: b
             print("Run Chasing Your Tail first to generate some logs.")
             return 1, output_buffer.getvalue()
 
-        if not config.get('api_keys', {}).get('wigle'):
-            print("\nNote: WiGLE API key not configured.")
+        if use_wigle and not credential_manager.get_wigle_token():
+            print("\nNote: WiGLE API key not configured in secure storage.")
             print("To enable WiGLE lookups:")
             print("1. Get an API key from wigle.net")
-            print("2. Add it to config.json under api_keys->wigle")
+            print("2. Run: python3 migrate_credentials.py to store it securely")
 
         days_value = 0 if all_logs else days_back
 

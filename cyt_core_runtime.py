@@ -53,7 +53,12 @@ def ensure_runtime_directories(config: dict) -> None:
 
 def create_cyt_log(config: dict) -> Tuple[str, IO[str]]:
     """Create and return the active CYT log file handle."""
-    log_file_name = f'./logs/cyt_log_{time.strftime("%m%d%y_%H%M%S")}'
+    paths = config.get("paths", {})
+    log_dir = paths.get("log_dir", "logs")
+    log_dir_path = pathlib.Path(log_dir)
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+    log_file_path = log_dir_path / f'cyt_log_{time.strftime("%m%d%y_%H%M%S")}'
+    log_file_name = str(log_file_path)
     return log_file_name, open(log_file_name, "w", buffering=1)
 
 

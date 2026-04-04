@@ -473,7 +473,7 @@ def run_surveillance_analysis(
             logger.error(f"Analysis failed: {e}")
             import traceback
 
-            traceback.print_exc()
+            print(traceback.format_exc())
             return 1, output_buffer.getvalue()
 
     return 0, output_buffer.getvalue()
