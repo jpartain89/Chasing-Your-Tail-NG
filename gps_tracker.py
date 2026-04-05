@@ -78,9 +78,7 @@ class GPSTracker:
         # Update current location and session
         self._update_current_session(location, location_id)
 
-        logger.info(
-            f"GPS reading added: {latitude:.6f}, {longitude:.6f} -> {location_id}"
-        )
+        logger.info("GPS reading added for location_id=%s", location_id)
         return location_id
 
     def _get_location_cluster_id(self, location: GPSLocation) -> str:
