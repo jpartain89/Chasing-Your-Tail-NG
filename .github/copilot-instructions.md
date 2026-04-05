@@ -5,7 +5,7 @@
 **Chasing Your Tail (CYT)** is a Python-based Wi-Fi probe request analyzer for detecting physical surveillance. It monitors wireless devices via Kismet integration, performs GPS-correlated persistence detection, and generates KML visualizations for Google Earth. This is a fork of ArgeliusLabs/Chasing-Your-Tail-NG.
 
 - **Language:** Python (~279K lines) with Shell scripts (~15K lines)
-- **Runtime:** Python 3.11–3.12 (CI-tested); Linux target with Wi-Fi monitoring hardware
+- **Runtime:** Python 3.11–3.14 (CI-tested); Linux target with Wi-Fi monitoring hardware
 - **Dependencies:** `requests>=2.28.0`, `cryptography>=40.0.0`, `pytest>=7.0.0`, `pytest-cov>=4.0.0`
 - **License:** MIT
 
