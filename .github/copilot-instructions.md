@@ -51,7 +51,7 @@ Triggered on push/PR to `main`, `master`, `develop` branches when `**.py`, `requ
 
 | Job | Blocking? | What it does |
 |-----|-----------|-------------|
-| **test** | ✅ Yes | Runs `pytest` across Python 3.11, 3.12 on ubuntu-latest |
+| **test** | ✅ Yes | Runs `pytest` across Python 3.11, 3.12, 3.13, 3.14 on ubuntu-latest |
 | **lint** | ❌ No (`continue-on-error`) | Runs `black --check`, `flake8` |
 | **security** | ❌ No (`continue-on-error`) | Runs `bandit`, `safety check` |
 
