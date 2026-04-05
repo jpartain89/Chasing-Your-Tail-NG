@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional, NamedTuple
 from dataclasses import dataclass
 import math
+import os
+from cryptography.fernet import Fernet
 
 logger = logging.getLogger(__name__)
 
@@ -535,9 +537,10 @@ class KMLExporter:
             total_devices=len(surveillance_devices) if surveillance_devices else 0,
         )
 
-        # Save to file
-        with open(output_file, "w") as f:
-            f.write(kml_output)
+        # Encrypt and save to file
+        encrypted_kml = self._encrypt_data(kml_output)
+        with open(output_file, "wb") as f:
+            f.write(encrypted_kml)
 
         logger.info(f"🎯 SPECTACULAR KML visualization generated: {output_file}")
         logger.info(
@@ -614,6 +617,21 @@ class KMLExporter:
 
         html += "</ul>"
         return html
+
+    def _get_encryption_key(self) -> bytes:
+        """Retrieve the symmetric encryption key for protecting KML output."""
+        key = os.environ.get("GPS_KML_ENC_KEY")
+        if not key:
+            raise RuntimeError(
+                "GPS_KML_ENC_KEY environment variable must be set for KML encryption."
+            )
+        return key.encode("utf-8")
+
+    def _encrypt_data(self, data: str) -> bytes:
+        """Encrypt sensitive KML data before writing it to disk."""
+        key = self._get_encryption_key()
+        fernet = Fernet(key)
+        return fernet.encrypt(data.encode("utf-8"))
 
     def _add_device_tracking_folder(
         self,
