@@ -25,12 +25,18 @@ def build_parser() -> argparse.ArgumentParser:
     monitor.add_argument("--once", action="store_true")
 
     analyze = subparsers.add_parser("analyze", help="Run probe analysis")
-    analyze.add_argument("--wigle", action="store_true",
-                         help="Enable WiGLE API queries (disabled by default)")
+    analyze.add_argument(
+        "--wigle",
+        action="store_true",
+        help="Enable WiGLE API queries (disabled by default)",
+    )
     analyze.add_argument("--days", type=int)
     analyze.add_argument("--all-logs", action="store_true")
-    analyze.add_argument("--local", action="store_true",
-                         help="[DEPRECATED] Ignored. Omitting --wigle already runs local-only analysis.")
+    analyze.add_argument(
+        "--local",
+        action="store_true",
+        help="[DEPRECATED] Ignored. Omitting --wigle already runs local-only analysis.",
+    )
 
     survey = subparsers.add_parser("survey", help="Run surveillance analysis")
     survey.add_argument("--demo", action="store_true")
@@ -59,7 +65,9 @@ def main() -> int:
 
     if args.command == "analyze":
         if args.local and not args.wigle:
-            print("Note: --local is deprecated and has no effect. Omitting --wigle already runs local-only analysis.")
+            print(
+                "Note: --local is deprecated and has no effect. Omitting --wigle already runs local-only analysis."
+            )
         use_wigle = args.wigle  # Only --wigle enables API queries; --local is a no-op.
         days = args.days if args.days is not None else 14
         return_code, output = run_probe_analysis(

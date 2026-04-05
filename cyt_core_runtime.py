@@ -16,7 +16,6 @@ from secure_database import SecureKismetDB
 from secure_ignore_loader import load_ignore_lists
 from secure_main_logic import SecureCYTMonitor
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -100,7 +99,9 @@ class MonitoringService:
             f"{len(self.probe_ignore_list)} Probed SSIDs added to ignore list.\n"
         )
 
-        self.latest_db_file = discover_latest_kismet_db(self.config["paths"]["kismet_logs"])
+        self.latest_db_file = discover_latest_kismet_db(
+            self.config["paths"]["kismet_logs"]
+        )
         self.log_file.write(f"Pulling data from: {self.latest_db_file}\n")
 
         self.monitor = SecureCYTMonitor(
@@ -122,7 +123,9 @@ class MonitoringService:
         if not self.latest_db_file or not self.monitor:
             raise RuntimeError("MonitoringService must be initialized before running")
 
-        list_update_interval = self.config.get("timing", {}).get("list_update_interval", 5)
+        list_update_interval = self.config.get("timing", {}).get(
+            "list_update_interval", 5
+        )
         with SecureKismetDB(self.latest_db_file) as db:
             self.monitor.process_current_activity(db)
             if cycle_number % list_update_interval == 0:
@@ -133,7 +136,11 @@ class MonitoringService:
 class BackgroundMonitoringRunner:
     """Thread-safe monitor runner for GUI integration."""
 
-    def __init__(self, config_path: str = "config.json", on_output: Optional[Callable[[str], None]] = None):
+    def __init__(
+        self,
+        config_path: str = "config.json",
+        on_output: Optional[Callable[[str], None]] = None,
+    ):
         self.config_path = config_path
         self.on_output = on_output
         self._stop_event = threading.Event()
@@ -153,14 +160,20 @@ class BackgroundMonitoringRunner:
             self._emit("Current Time: " + time.strftime("%Y-%m-%d %H:%M:%S"))
             latest_file = service.initialize()
             self._emit(f"{len(service.ignore_list)} MACs added to ignore list.")
-            self._emit(f"{len(service.probe_ignore_list)} Probed SSIDs added to ignore list.")
+            self._emit(
+                f"{len(service.probe_ignore_list)} Probed SSIDs added to ignore list."
+            )
             self._emit(f"Pulling data from: {latest_file}")
             self._emit("Initializing secure tracking lists...")
             self._emit("Initialization complete!")
 
             check_interval = context.config.get("timing", {}).get("check_interval", 60)
-            list_update_interval = context.config.get("timing", {}).get("list_update_interval", 5)
-            self._emit("SECURE MODE: All SQL injection vulnerabilities have been eliminated!")
+            list_update_interval = context.config.get("timing", {}).get(
+                "list_update_interval", 5
+            )
+            self._emit(
+                "SECURE MODE: All SQL injection vulnerabilities have been eliminated!"
+            )
             self._emit(
                 f"Monitoring every {check_interval} seconds, updating lists every {list_update_interval} cycles"
             )

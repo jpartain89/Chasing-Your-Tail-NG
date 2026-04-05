@@ -11,12 +11,16 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from secure_database import SecureKismetDB, SecureTimeWindows, create_secure_db_connection
-
+from secure_database import (
+    SecureKismetDB,
+    SecureTimeWindows,
+    create_secure_db_connection,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_device_json(ssid: Optional[str] = None) -> str:
     """Build minimal Kismet device JSON with optional probe SSID."""
@@ -37,24 +41,25 @@ def mem_db(tmp_path):
     """An in-memory (file-based tmp) SQLite database pre-populated with test rows."""
     db_file = str(tmp_path / "test.kismet")
     conn = sqlite3.connect(db_file)
-    conn.execute(
-        """CREATE TABLE devices (
+    conn.execute("""CREATE TABLE devices (
             devmac TEXT NOT NULL,
             type   TEXT,
             device TEXT,
             last_time INTEGER
-        )"""
-    )
+        )""")
     now = int(time.time())
     rows = [
-        ("AA:BB:CC:DD:EE:01", "Wi-Fi AP",   _make_device_json(),          now - 30),
+        ("AA:BB:CC:DD:EE:01", "Wi-Fi AP", _make_device_json(), now - 30),
         ("AA:BB:CC:DD:EE:02", "Wi-Fi Client", _make_device_json("HomeNet"), now - 60),
-        ("AA:BB:CC:DD:EE:03", "Wi-Fi Client", _make_device_json("OfficeWi-Fi"), now - 120),
-        ("AA:BB:CC:DD:EE:04", "Wi-Fi Client", _make_device_json(),          now - 300),
+        (
+            "AA:BB:CC:DD:EE:03",
+            "Wi-Fi Client",
+            _make_device_json("OfficeWi-Fi"),
+            now - 120,
+        ),
+        ("AA:BB:CC:DD:EE:04", "Wi-Fi Client", _make_device_json(), now - 300),
     ]
-    conn.executemany(
-        "INSERT INTO devices VALUES (?, ?, ?, ?)", rows
-    )
+    conn.executemany("INSERT INTO devices VALUES (?, ?, ?, ?)", rows)
     conn.commit()
     conn.close()
     yield db_file, now
@@ -63,6 +68,7 @@ def mem_db(tmp_path):
 # ---------------------------------------------------------------------------
 # SecureKismetDB — connection lifecycle
 # ---------------------------------------------------------------------------
+
 
 class TestSecureKismetDBConnection:
 
@@ -106,6 +112,7 @@ class TestSecureKismetDBConnection:
 # ---------------------------------------------------------------------------
 # SecureKismetDB — get_devices_by_time_range
 # ---------------------------------------------------------------------------
+
 
 class TestGetDevicesByTimeRange:
 
@@ -152,6 +159,7 @@ class TestGetDevicesByTimeRange:
 # SecureKismetDB — get_mac_addresses_by_time_range
 # ---------------------------------------------------------------------------
 
+
 class TestGetMACAddresses:
 
     @pytest.mark.unit
@@ -173,6 +181,7 @@ class TestGetMACAddresses:
 # ---------------------------------------------------------------------------
 # SecureKismetDB — get_probe_requests_by_time_range
 # ---------------------------------------------------------------------------
+
 
 class TestGetProbeRequests:
 
@@ -222,6 +231,7 @@ class TestGetProbeRequests:
 # SecureKismetDB — validate_connection
 # ---------------------------------------------------------------------------
 
+
 class TestValidateConnection:
 
     @pytest.mark.unit
@@ -263,7 +273,13 @@ class TestSecureTimeWindows:
     def test_get_time_boundaries_returns_all_windows(self):
         stw = SecureTimeWindows(SAMPLE_CONFIG)
         boundaries = stw.get_time_boundaries()
-        for key in ("recent_time", "medium_time", "old_time", "oldest_time", "current_time"):
+        for key in (
+            "recent_time",
+            "medium_time",
+            "old_time",
+            "oldest_time",
+            "current_time",
+        ):
             assert key in boundaries
             assert isinstance(boundaries[key], float)
 

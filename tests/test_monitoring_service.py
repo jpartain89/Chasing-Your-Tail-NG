@@ -24,7 +24,6 @@ from cyt_core_runtime import (
 )
 from secure_credentials import SecureCredentialManager
 
-
 # ---------------------------------------------------------------------------
 # Minimal config helpers
 # ---------------------------------------------------------------------------
@@ -50,6 +49,7 @@ def _write_config(path, cfg=None):
 # RuntimeContext
 # ---------------------------------------------------------------------------
 
+
 class TestRuntimeContext:
 
     @pytest.mark.unit
@@ -63,6 +63,7 @@ class TestRuntimeContext:
 # ---------------------------------------------------------------------------
 # load_runtime_context
 # ---------------------------------------------------------------------------
+
 
 class TestLoadRuntimeContext:
 
@@ -88,6 +89,7 @@ class TestLoadRuntimeContext:
 # ---------------------------------------------------------------------------
 # ensure_runtime_directories
 # ---------------------------------------------------------------------------
+
 
 class TestEnsureRuntimeDirectories:
 
@@ -133,6 +135,7 @@ class TestEnsureRuntimeDirectories:
 # discover_latest_kismet_db
 # ---------------------------------------------------------------------------
 
+
 class TestDiscoverLatestKismetDB:
 
     @pytest.mark.unit
@@ -163,6 +166,7 @@ class TestDiscoverLatestKismetDB:
 # MonitoringService (with mocks)
 # ---------------------------------------------------------------------------
 
+
 class TestMonitoringServiceInitialize:
 
     @pytest.mark.unit
@@ -186,10 +190,13 @@ class TestMonitoringServiceInitialize:
         class FakeDB:
             def __init__(self, path):
                 pass
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *_):
                 pass
+
             def validate_connection(self):
                 db_validated["called"] = True
                 return True
@@ -197,6 +204,7 @@ class TestMonitoringServiceInitialize:
         class FakeMonitor:
             def __init__(self, config, ignore, probe_ignore, log_file):
                 pass
+
             def initialize_tracking_lists(self, db):
                 pass
 
@@ -228,16 +236,20 @@ class TestMonitoringServiceInitialize:
         class FakeDB:
             def __init__(self, path):
                 pass
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *_):
                 pass
+
             def validate_connection(self):
                 return False  # Simulate failure
 
         class FakeMonitor:
             def __init__(self, *args, **kwargs):
                 pass
+
             def initialize_tracking_lists(self, db):
                 pass
 
@@ -265,6 +277,7 @@ class TestMonitoringServiceInitialize:
 # ---------------------------------------------------------------------------
 # BackgroundMonitoringRunner — lifecycle
 # ---------------------------------------------------------------------------
+
 
 class TestBackgroundMonitoringRunner:
 
@@ -304,20 +317,26 @@ class TestBackgroundMonitoringRunner:
         class FakeDB:
             def __init__(self, path):
                 pass
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *_):
                 pass
+
             def validate_connection(self):
                 return True
 
         class FakeMonitor:
             def __init__(self, *args, **kwargs):
                 pass
+
             def initialize_tracking_lists(self, db):
                 pass
+
             def process_current_activity(self, db):
                 pass
+
             def rotate_tracking_lists(self, db):
                 pass
 

@@ -3,10 +3,12 @@
 BlackHat Arsenal Demo Script for CYT
 Demonstrates key features and generates sample output
 """
+
 import subprocess
 import sys
 import os
 from datetime import datetime
+
 
 def print_banner():
     print("""
@@ -17,14 +19,18 @@ def print_banner():
 ╚══════════════════════════════════════════════════════════════╝
     """)
 
+
 def print_step(step, description):
     print(f"\n🎯 Step {step}: {description}")
     print("=" * 60)
 
+
 def run_command(cmd, description):
     print(f"📡 {description}...")
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True, timeout=30
+        )
         if result.returncode == 0:
             print("✅ Success!")
         else:
@@ -34,73 +40,78 @@ def run_command(cmd, description):
     except Exception as e:
         print(f"⚠️ Note: {str(e)[:100]}...")
 
+
 def main():
     print_banner()
     print(f"🕒 Demo started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     print_step(1, "Security Verification")
     print("🔒 Verifying security hardening...")
     print("✅ SQL injection prevention: ACTIVE")
-    print("✅ Encrypted credentials: ENABLED") 
+    print("✅ Encrypted credentials: ENABLED")
     print("✅ Input validation: ACTIVE")
     print("✅ Secure ignore list loading: ACTIVE")
-    
+
     print_step(2, "Core Features Demo")
-    
+
     print("\n📊 CYT Core Capabilities:")
     features = [
         "Real-time Wi-Fi device monitoring",
-        "Advanced persistence detection algorithms", 
+        "Advanced persistence detection algorithms",
         "Multi-location tracking and correlation",
         "Spectacular Google Earth KML visualization",
         "HTML report generation with pandoc",
         "GPS integration with Bluetooth support",
-        "Security-hardened architecture"
+        "Security-hardened architecture",
     ]
     for feature in features:
         print(f"  ✅ {feature}")
-    
+
     print_step(3, "Demo Analysis")
     print("🎯 Running surveillance analysis with demo data...")
-    
+
     # Check if we can run demo
     if os.path.exists("surveillance_analyzer.py"):
-        run_command("python3 surveillance_analyzer.py --demo", 
-                   "Executing surveillance detection with simulated GPS route")
+        run_command(
+            "python3 surveillance_analyzer.py --demo",
+            "Executing surveillance detection with simulated GPS route",
+        )
     else:
-        print("⚠️ surveillance_analyzer.py not found - ensure you're in the correct directory")
-    
+        print(
+            "⚠️ surveillance_analyzer.py not found - ensure you're in the correct directory"
+        )
+
     print_step(4, "Output Files Generated")
-    
+
     # Check for output files
     output_dirs = [
         ("surveillance_reports/", "Surveillance analysis reports (MD/HTML)"),
         ("kml_files/", "Google Earth KML visualizations"),
-        ("kml_files/demo_following_detection.kml", "Demo: Following detection example")
+        ("kml_files/demo_following_detection.kml", "Demo: Following detection example"),
     ]
-    
+
     for path, description in output_dirs:
         if os.path.exists(path):
             print(f"  ✅ {path} - {description}")
         else:
             print(f"  📁 {path} - {description} (will be created)")
-    
+
     print_step(5, "Google Earth Integration")
     print("🗺️ KML Visualization Features:")
     kml_features = [
         "Color-coded persistence level markers",
-        "Device tracking paths with movement correlation", 
+        "Device tracking paths with movement correlation",
         "Rich interactive balloon content",
         "Activity heatmaps and intensity zones",
         "Temporal analysis overlays",
-        "Professional styling and metadata"
+        "Professional styling and metadata",
     ]
     for feature in kml_features:
         print(f"  🎨 {feature}")
-    
+
     print(f"\n📁 Open 'kml_files/demo_following_detection.kml' in Google Earth to see")
     print("   spectacular visualization of device following detection!")
-    
+
     print_step(6, "BlackHat Arsenal Ready!")
     print("""
 🎪 Demo Complete! Key highlights for BlackHat Arsenal:
@@ -126,6 +137,7 @@ def main():
 
 🌟 Ready for BlackHat Arsenal presentation!
     """)
+
 
 if __name__ == "__main__":
     main()

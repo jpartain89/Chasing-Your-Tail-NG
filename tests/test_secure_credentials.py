@@ -17,10 +17,10 @@ from secure_credentials import (
     secure_config_loader,
 )
 
-
 # ---------------------------------------------------------------------------
 # SecureCredentialManager — store and retrieve
 # ---------------------------------------------------------------------------
+
 
 class TestSecureCredentialManager:
 
@@ -108,6 +108,7 @@ class TestSecureCredentialManager:
 # get_environment_credentials
 # ---------------------------------------------------------------------------
 
+
 class TestGetEnvironmentCredentials:
 
     @pytest.mark.unit
@@ -134,6 +135,7 @@ class TestGetEnvironmentCredentials:
 # ---------------------------------------------------------------------------
 # secure_config_loader
 # ---------------------------------------------------------------------------
+
 
 class TestSecureConfigLoader:
 
@@ -169,7 +171,9 @@ class TestSecureConfigLoader:
         def fake_migrate(self, config):
             mgr_calls["called"] = True
 
-        monkeypatch.setattr(sc_module.SecureCredentialManager, "migrate_from_config", fake_migrate)
+        monkeypatch.setattr(
+            sc_module.SecureCredentialManager, "migrate_from_config", fake_migrate
+        )
 
         cfg = {
             "paths": {

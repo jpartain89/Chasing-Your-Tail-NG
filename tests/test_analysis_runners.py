@@ -11,13 +11,17 @@ import surveillance_analyzer
 def test_run_probe_analysis_no_logs(monkeypatch):
     monkeypatch.setattr(probe_analyzer.glob, "glob", lambda _pattern: [])
 
-    code, output = probe_analyzer.run_probe_analysis(use_wigle=False, days_back=14, all_logs=False)
+    code, output = probe_analyzer.run_probe_analysis(
+        use_wigle=False, days_back=14, all_logs=False
+    )
     assert code == 1
     assert "No log files found" in output
 
 
 def test_run_probe_analysis_success_with_stub(monkeypatch):
-    monkeypatch.setattr(probe_analyzer.glob, "glob", lambda _pattern: ["logs/cyt_log_010126_010101"])
+    monkeypatch.setattr(
+        probe_analyzer.glob, "glob", lambda _pattern: ["logs/cyt_log_010126_010101"]
+    )
 
     class FakeProbeAnalyzer:
         def __init__(self, local_only=True, days_back=14):
@@ -40,7 +44,9 @@ def test_run_probe_analysis_success_with_stub(monkeypatch):
 
     monkeypatch.setattr(probe_analyzer, "ProbeAnalyzer", FakeProbeAnalyzer)
 
-    code, output = probe_analyzer.run_probe_analysis(use_wigle=False, days_back=7, all_logs=False)
+    code, output = probe_analyzer.run_probe_analysis(
+        use_wigle=False, days_back=7, all_logs=False
+    )
     assert code == 0
     assert "Found 1 unique SSIDs" in output
     assert "SSID: TestSSID" in output
@@ -65,7 +71,9 @@ def test_run_surveillance_analysis_success_with_stub(monkeypatch):
         def export_results_json(self, results, output_file):
             return None
 
-    monkeypatch.setattr(surveillance_analyzer, "SurveillanceAnalyzer", FakeSurveillanceAnalyzer)
+    monkeypatch.setattr(
+        surveillance_analyzer, "SurveillanceAnalyzer", FakeSurveillanceAnalyzer
+    )
 
     code, output = surveillance_analyzer.run_surveillance_analysis(demo=True)
     assert code == 0

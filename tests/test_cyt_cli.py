@@ -21,7 +21,12 @@ def test_monitor_command_routes_to_legacy(monkeypatch):
 
     result = cyt_cli.main()
     assert result == 0
-    assert called["command"] == ["chasing_your_tail.py", "--config", "custom.json", "--once"]
+    assert called["command"] == [
+        "chasing_your_tail.py",
+        "--config",
+        "custom.json",
+        "--once",
+    ]
 
 
 def test_analyze_command_routes_flags(monkeypatch):

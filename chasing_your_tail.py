@@ -19,12 +19,10 @@ from cyt_core_runtime import (
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('cyt_security.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("cyt_security.log"), logging.StreamHandler()],
 )
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -73,7 +71,9 @@ def main() -> int:
         print("Initialization complete!")
 
         check_interval = context.config.get("timing", {}).get("check_interval", 60)
-        list_update_interval = context.config.get("timing", {}).get("list_update_interval", 5)
+        list_update_interval = context.config.get("timing", {}).get(
+            "list_update_interval", 5
+        )
 
         logging.info("Starting secure CYT monitoring loop...")
         print("SECURE MODE: All SQL injection vulnerabilities have been eliminated!")
