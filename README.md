@@ -71,6 +71,24 @@ Or the setup wizard will run automatically on first GUI launch.
 
 ## Usage
 
+### Unified CLI (Recommended for automation)
+```bash
+# Show all commands
+python3 cyt_cli.py --help
+
+# Monitor (single cycle)
+python3 cyt_cli.py monitor --once
+
+# Probe analysis (local only)
+python3 cyt_cli.py analyze --days 14
+
+# Surveillance analysis (demo data)
+python3 cyt_cli.py survey --demo
+
+# Setup wizard
+python3 cyt_cli.py setup --cli
+```
+
 ### GUI Interface (Recommended)
 ```bash
 python3 cyt_gui.py
@@ -86,7 +104,7 @@ python3 cyt_gui.py
 ### Command Line Monitoring
 ```bash
 # Start core monitoring (secure)
-python3 chasing_your_tail.py
+python3 chasing_your_tail.py --once
 
 # Start Kismet (ONLY working script - July 23, 2025 fix)
 ./start_kismet_clean.sh
@@ -151,7 +169,7 @@ python3 legacy/create_ignore_list.py  # Moved to legacy folder
 - **secure_ignore_loader.py**: Safe ignore list loading
 - **secure_main_logic.py**: Secure monitoring logic
 - **input_validation.py**: Input sanitization and validation
-- **migrate_credentials.py**: Credential migration tool
+- **legacy/migrate_credentials.py**: Legacy one-time credential migration helper
 
 ## Output Files & Project Structure
 
@@ -208,14 +226,28 @@ Advanced persistence detection algorithms analyze device behavior patterns:
 All settings are centralized in `config.json`:
 ```json
 {
-  "kismet_db_path": "/path/to/kismet/*.kismet",
-  "log_directory": "./logs/",
-  "ignore_lists_directory": "./ignore_lists/",
-  "time_windows": {
-    "recent": 5,
-    "medium": 10,
-    "old": 15,
-    "oldest": 20
+  "paths": {
+    "base_dir": ".",
+    "log_dir": "logs",
+    "reports_dir": "reports",
+    "kml_dir": "kml_files",
+    "surveillance_reports_dir": "surveillance_reports",
+    "analysis_logs_dir": "analysis_logs",
+    "kismet_logs": "/home/matt/kismet_logs/*.kismet",
+    "ignore_lists": {
+      "mac": "mac_list.json",
+      "ssid": "ssid_list.json"
+    }
+  },
+  "timing": {
+    "check_interval": 60,
+    "list_update_interval": 5,
+    "time_windows": {
+      "recent": 5,
+      "medium": 10,
+      "old": 15,
+      "oldest": 20
+    }
   }
 }
 ```
@@ -250,9 +282,49 @@ The test suite includes:
 - **Coverage reporting** to track code coverage
 - **Automated CI/CD** that runs on every pull request
 
-Tests run automatically on PRs against Python 3.8, 3.9, 3.10, 3.11, and 3.12.
+Tests run automatically on PRs against Python 3.11 and 3.12.
 
 See `tests/README.md` for more details on the test suite.
+
+## Migration Notes
+
+- Legacy one-off scripts were moved from project root to `legacy/`:
+  - `legacy/blackhat_demo.py`
+  - `legacy/create_ignore_list.py`
+  - `legacy/ignore_list.py`
+  - `legacy/ignore_list_ssid.py`
+  - `legacy/migrate_credentials.py`
+- Root-level workflows should use `cyt_cli.py`, `chasing_your_tail.py`, `probe_analyzer.py`, `surveillance_analyzer.py`, and `setup_wizard.py`.
+- Startup automation should use only `start_kismet_clean.sh` and `start_gui.sh`.
+
+## Deprecation Timeline
+
+- Current cycle:
+  - Soft compatibility is preserved (legacy entry points still work where wrappers exist).
+  - New automation and docs target `cyt_cli.py`.
+- Next release cycle:
+  - Legacy script usage is supported but treated as maintenance-only.
+  - No new features will be added to files under `legacy/`.
+- Future major cleanup:
+  - Legacy scripts under `legacy/` may be removed after adoption of the unified CLI path.
+
+## Manual Validation Checklist
+
+Run these before release:
+
+```bash
+export CYT_TEST_MODE=true
+python3 cyt_cli.py --help
+python3 cyt_cli.py monitor --help
+python3 cyt_cli.py analyze --help
+python3 cyt_cli.py survey --help
+python3 cyt_cli.py setup --help
+python3 chasing_your_tail.py --once
+python3 probe_analyzer.py --days 1
+python3 surveillance_analyzer.py --demo
+python3 -m pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-report=xml
+python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,legacy
+```
 
 ## Security Features
 

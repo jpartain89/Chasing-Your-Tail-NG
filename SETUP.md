@@ -1,58 +1,103 @@
 # CYT Setup Guide
 
-## Quick Start for BlackHat Demo
+## Quick Start
 
 ### 1. Install Dependencies
 ```bash
 pip3 install -r requirements.txt
 ```
 
-### 2. Security Setup (REQUIRED)
+### 2. Configure Secure Runtime
 ```bash
-# Migrate credentials to secure storage
-python3 migrate_credentials.py
-
-# Verify security hardening
-python3 chasing_your_tail.py
-# Should show: "🔒 SECURE MODE: All SQL injection vulnerabilities have been eliminated!"
+export CYT_TEST_MODE=true  # use only for non-interactive testing/CI
 ```
 
-### 3. Configuration
-Edit `config.json` with your Kismet database path:
+For legacy credential migration helpers, use:
+```bash
+python3 legacy/migrate_credentials.py
+```
+
+### 3. Verify Configuration
+Ensure `config.json` uses the current schema:
+
 ```json
 {
-  "kismet_db_path": "/path/to/your/kismet/*.kismet"
+  "paths": {
+    "base_dir": ".",
+    "log_dir": "logs",
+    "reports_dir": "reports",
+    "kml_dir": "kml_files",
+    "surveillance_reports_dir": "surveillance_reports",
+    "analysis_logs_dir": "analysis_logs",
+    "kismet_logs": "/home/*/kismet_logs/*.kismet",
+    "ignore_lists": {
+      "mac": "mac_list.json",
+      "ssid": "ssid_list.json"
+    }
+  },
+  "timing": {
+    "check_interval": 60,
+    "list_update_interval": 5,
+    "time_windows": {
+      "recent": 5,
+      "medium": 10,
+      "old": 15,
+      "oldest": 20
+    }
+  }
 }
 ```
 
-### 4. Run Analysis
+## Run Modes
+
+### Unified CLI (preferred)
 ```bash
-# Start GUI interface
-python3 cyt_gui.py
-
-# Or run surveillance analysis directly
-python3 surveillance_analyzer.py
-
-# For demo with simulated GPS data
-python3 surveillance_analyzer.py --demo
+python3 cyt_cli.py --help
+python3 cyt_cli.py monitor --once
+python3 cyt_cli.py analyze --days 14
+python3 cyt_cli.py survey --demo
+python3 cyt_cli.py setup --cli
 ```
 
-### 5. View Results
-- **Reports**: Check `surveillance_reports/` for markdown and HTML files
-- **Visualizations**: Open `.kml` files from `kml_files/` in Google Earth
+### GUI
+```bash
+python3 cyt_gui.py
+```
 
-## BlackHat Arsenal Demo Features
+### Direct scripts (supported)
+```bash
+python3 chasing_your_tail.py --once
+python3 probe_analyzer.py --days 7
+python3 surveillance_analyzer.py --demo
+python3 setup_wizard.py --cli
+```
 
-- ✅ **Spectacular KML Visualization** - Professional Google Earth integration
-- ✅ **Multi-format Reports** - Markdown, HTML, and KML outputs  
-- ✅ **Security Hardened** - SQL injection prevention, encrypted credentials
-- ✅ **GPS Integration** - Automatic coordinate extraction from Kismet
-- ✅ **Multi-location Tracking** - Detects devices following across locations
-- ✅ **Professional GUI** - Enhanced Tkinter interface with analysis buttons
+## Startup Scripts (authoritative)
 
-## Documentation
-- **README.md** - Complete user documentation
-- **CLAUDE.md** - Technical developer documentation
+Use only these scripts for startup automation:
 
-## Support
-GitHub: https://github.com/matt0177/cyt
+```bash
+./start_kismet_clean.sh
+./start_gui.sh
+```
+
+## Output Locations
+
+- `logs/` real-time CYT logs
+- `reports/` probe analysis text reports
+- `surveillance_reports/` markdown/html surveillance reports
+- `kml_files/` generated KML visualizations
+- `analysis_logs/` surveillance analyzer logs
+
+## Verification Commands
+
+```bash
+export CYT_TEST_MODE=true
+python3 -m pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-report=xml
+python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,legacy
+```
+
+## Notes
+
+- `legacy/` contains archived one-off scripts retained for reference.
+- New feature work should target shared runtime services and `cyt_cli.py`.

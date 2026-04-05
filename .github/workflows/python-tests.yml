@@ -2,14 +2,14 @@ name: Python Tests
 
 on:
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, dev ]
     paths:
       - '**.py'
       - 'requirements.txt'
       - 'tests/**'
       - '.github/workflows/python-tests.yml'
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, dev ]
     paths:
       - '**.py'
       - 'requirements.txt'
@@ -20,38 +20,44 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    
+        python-version:
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+    env:
+      CYT_TEST_MODE: "true"
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-    
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
-    
+        allow-prereleases: true
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
         restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     - name: Run tests with pytest
       run: |
         pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-report=xml
-    
+
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
       with:
         files: ./coverage.xml
         flags: unittests
@@ -60,26 +66,29 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        python-version:
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-    
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
-        python-version: '3.11'
-    
+        python-version: '3.13'
     - name: Install linting tools
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pylint black
-    
     - name: Check code formatting with black
       run: |
         black --check --diff .
       continue-on-error: true
-    
     - name: Lint with flake8
       run: |
         # Stop the build if there are Python syntax errors or undefined names
@@ -90,27 +99,29 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        python-version:
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-    
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
-        python-version: '3.11'
-    
+        python-version: '3.13'
     - name: Install security tools
       run: |
         python -m pip install --upgrade pip
         pip install bandit safety
-    
     - name: Run bandit security scan
       run: |
         bandit -r . -f json -o bandit-report.json || true
         bandit -r . -ll
       continue-on-error: true
-    
     - name: Check dependencies for known vulnerabilities
       run: |
         safety check --json || true
