@@ -33,7 +33,7 @@ pytest -v
 ## GitHub Actions
 
 Tests are automatically run on pull requests via GitHub Actions. The workflow:
-- Tests across Python versions 3.11-3.12
+- Tests across Python versions 3.11-3.14
 - Runs code linting with flake8
 - Performs security scanning with bandit
 - Generates coverage reports
