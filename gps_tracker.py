@@ -134,7 +134,7 @@ class GPSTracker:
             self.location_sessions.append(current_session)
 
         self.current_location = current_session
-        logger.debug(f"Updated session: {location_id}")
+        logger.debug("Updated location session")
 
     def _calculate_distance(self, loc1: GPSLocation, loc2: GPSLocation) -> float:
         """Calculate distance between two GPS locations in meters"""
