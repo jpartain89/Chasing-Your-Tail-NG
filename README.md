@@ -282,7 +282,7 @@ The test suite includes:
 - **Coverage reporting** to track code coverage
 - **Automated CI/CD** that runs on every pull request
 
-Tests run automatically on PRs against Python 3.8, 3.9, 3.10, 3.11, and 3.12.
+Tests run automatically on PRs against Python 3.11 and 3.12.
 
 See `tests/README.md` for more details on the test suite.
 
